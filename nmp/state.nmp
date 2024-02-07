@@ -1,0 +1,88 @@
+// Usual ARM state implementation
+
+// activate only marked registers for debugging
+let gliss_debug_only = 1
+
+// General Purpose Registers
+let XRNum = 31
+reg X[XRNum, u64]
+//W registers are the low 32bits, high ones are ignored on read and set to 0 on write
+//reg ZR[1,u64] alias X[31] = 0b0
+
+// Special Registers
+reg PC[1, u64] is_pc = 1
+reg NPC[1,u64] //New PC
+reg SP[1, u64]
+
+// SIMD&FP registers
+let VRNum = 32
+//reg V[VRNum, u128]
+//A 128-bit register named Q0 to Q31.
+//A 64-bit register named D0 to D31.
+//A 32-bit register named S0 to S31.
+//A 16-bit register named H0 to H31.
+//An 8-bit register named B0 to B31.
+//A 128-bit vector of elements.
+//reg FPCR[1, u64]
+//reg FPSR[1, u64]
+
+// scalable vectore registers
+//let ZRNum = 32
+//?between 128 and 2048 bits
+//reg Z[ZRNum, u2048] 
+//A fixed-length 128-bit vector of elements named V0 to V31.
+//A 128-bit register named Q0 to Q31.
+//    |_ Vx = Qx
+//A 64-bit register named D0 to D31
+//A 32-bit register named S0 to S31.
+//A 16-bit register named H0 to H31.
+//An 8-bit register named B0 to B31.
+
+// SVE scalable predicate registers
+//let PRNum = 16
+//reg P[PRNum, u256] //? between 16bits and 256bits
+//reg FFR[1, u64] //?
+
+
+// access to SR flags (deprecated)
+reg NFLAG [1, u1] 	// N=1 if the result is negative, N=0 if it is positive or zero
+reg ZFLAG [1, u1]	// Z=1 if the result of the instruction is zero and to 0 otherwise
+reg CFLAG [1, u1]
+	//(*)For an addition C is set to 1 if the addition produced a carry and to 0 otherwise
+	//(*)For a substraction C is set to 0 if the substraction produced a borrow and to 1 otherwise
+	//(*)For an operation that incorporate a shift operation C is set to the last u1 shifted out of the value by the shifter
+	//(*)Else C is normally unchanged.
+reg VFLAG [1, u1]
+	//(*) For an addition V is set to 1 if signed overflow occured
+	//(*) Else V is normally unchanged
+reg QFLAG [1, u1] 	// Indicate if an overflow and/or saturation has occured in the DSP instruction
+
+
+mode REG_INDEX(r: card(5)) = (r)
+	syntax = format("r%d", r)
+	image  = format("%5b", r)
+	number = r
+
+// Memory
+mem M 	[64, u8]  				// 8-bits word memory
+mem M16 [64, u16] alias = M[0]	// 16-bits word memory alias
+mem M32 [64, u32] alias = M[0]	// 32-bits word memory alias
+mem M64 [128, u64] alias = M[0]	// 64-bits word memory alias
+
+// initialisation
+op init ()
+	action = {
+		PC = 0x2000;
+//		GPR[14]=0x2000;
+//		GPR[13]=0x800;
+//		GPR[21]=0x600;
+//		GPR[23]=0x400;
+//		GPR[25]=0x200;
+//		GPR[27]=0x1000;
+//		GPR[29]=0x1200;
+
+		// sp init for validator (same value as gdb)
+		SP = 0x800;
+
+	 }
+

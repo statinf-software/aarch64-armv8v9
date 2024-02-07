@@ -1,0 +1,46 @@
+///////////////////////////////////////////////////
+//
+// New ARM description in Sim-nML
+//
+// Thinked for gliss2.
+// Based on "arm/goodies/arm_param/arm.nmp"
+// Need to be optimized by optirg. 
+//
+// July 2009
+// R. Dubot Y. Ndongo
+//
+// January 2011
+// Needs to be completed to be working
+// J. Barre
+//
+///////////////////////////////////////////////////
+
+let proc = "aarch64"
+let bit_order = "uppermost"
+let gliss_isize = "32"
+
+include "types.nmp"
+include "state.nmp"
+
+// **** instructions sets ******
+op instruction = AARCH64
+
+op AARCH64(x : AARCH64_instr)
+	image = x.image
+	syntax = x.syntax
+	action = {
+		NPC = PC + 8;
+		PC = PC + 16;
+		x.action;
+		PC = NPC;
+	}
+	instruction_set_name = "AARCH64"
+          
+op AARCH64_instr =
+	branch 
+
+
+
+include "condition.nmp"
+include "control.nmp"
+
