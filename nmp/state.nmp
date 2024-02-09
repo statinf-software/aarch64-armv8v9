@@ -59,7 +59,7 @@ reg QFLAG [1, u1] 	// Indicate if an overflow and/or saturation has occured in t
 
 
 mode REG_INDEX(r: card(5)) = (r)
-	syntax = format("r%d", r)
+	syntax = format("%d", r)
 	image  = format("%5b", r)
 	number = r
 

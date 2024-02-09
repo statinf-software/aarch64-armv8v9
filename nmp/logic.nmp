@@ -1,0 +1,350 @@
+op logic = AND_immediate | AND_shifted | ANDS_immediate | ANDS_shifted | 
+    CASB | CASH | CASP | CAS | CCMN_immediate | CCMN_register | CCMP_immediate | CCMP_register
+
+op AND_immediate(sf:u1, N:u1, immr:u6, imms:u6, Rn:REG_INDEX,Rd:REG_INDEX)
+    //32/AND <Xd|SP>, <Xn>, #<imm>
+    syntax = "and immediate"
+    image = format("%1b00100100%1b%6b%6b%s%s", sf, N, immr, imms, Rn.image, Rd.image)
+    action = {
+        // integer d = UInt(Rd);
+        // integer n = UInt(Rn);
+        // integer datasize = if sf == '1' then 64 else 32;
+        // bits(datasize) imm;
+        // if sf == '0' && N != '0' then UNDEFINED;
+        // (imm, -) = DecodeBitMasks(N, imms, immr, TRUE, datasize);
+        // bits(datasize) result;
+        // bits(datasize) operand1 = X[n, datasize];
+        // result = operand1 AND imm;
+        // if d == 31 then
+        // SP[] = ZeroExtend(result, 64);
+        // else
+        // X[d, datasize] = result;
+    }
+op AND_shifted(sf: u1, sh: u2, Rm: REG_INDEX, imm6:u6, Rn:REG_INDEX, Rd:REG_INDEX)
+    //32/AND <Xd>, <Xn>, <Xm>{, <shift> #<amount>}
+    syntax = "and shifted"
+    image = format("%1b0001010%2b0%s%6b%s%s", sf,sh,Rm.image,imm6,Rn.image,Rd.image)
+    action = {
+        // integer d = UInt(Rd);
+        // integer n = UInt(Rn);
+        // integer m = UInt(Rm);
+        // integer datasize = if sf == '1' then 64 else 32;
+        // if sf == '0' && imm6<5> == '1' then UNDEFINED;
+        // ShiftType shift_type = DecodeShift(shift);
+        // integer shift_amount = UInt(imm6);
+        // bits(datasize) operand1 = X[n, datasize];
+        // bits(datasize) operand2 = ShiftReg(m, shift_type, shift_amount, datasize);
+        // bits(datasize) result;
+        // result = operand1 AND operand2;
+        // X[d, datasize] = result;
+    }
+
+op ANDS_immediate(sf:u1,N:u1, immr:u6, imms:u6, Rn:REG_INDEX, Rd:REG_INDEX)
+    //ANDS <Xd>, <Xn>, #<imm>
+    syntax = "ands immediate"
+    image = format("%1b11100100%1b%6b%6b%s%s", sf,N,immr,imms,Rn.image,Rd.image)
+    action = {
+        // integer d = UInt(Rd);
+        // integer n = UInt(Rn);
+        // integer datasize = if sf == '1' then 64 else 32;
+        // bits(datasize) imm;
+        // if sf == '0' && N != '0' then UNDEFINED;
+        // (imm, -) = DecodeBitMasks(N, imms, immr, TRUE, datasize);
+        // bits(datasize) result;
+        // bits(datasize) operand1 = X[n, datasize];
+        // result = operand1 AND imm;
+        // PSTATE.<N,Z,C,V> = result<datasize-1>:IsZeroBit(result):'00';
+        // X[d, datasize] = result;
+    }
+op ANDS_shifted(sf:u1,sh:u2,Rm:REG_INDEX,imm6:u6,Rn:REG_INDEX,Rd:REG_INDEX)
+
+
+    //32/ANDS <Xd>, <Xn>, <Xm>{, <shift> #<amount>}
+    syntax = "ands shifted"
+    image = format("%1b1101010%2b0%s%6b%s%s", sf,sh,Rm.image,imm6,Rn.image,Rd.image)
+    action = {
+        // integer d = UInt(Rd);
+        // integer n = UInt(Rn);
+        // integer m = UInt(Rm);
+        // integer datasize = if sf == '1' then 64 else 32;
+        // if sf == '0' && imm6<5> == '1' then UNDEFINED;
+        // ShiftType shift_type = DecodeShift(shift);
+        // integer shift_amount = UInt(imm6);
+        // bits(datasize) operand1 = X[n, datasize];
+        // bits(datasize) operand2 = ShiftReg(m, shift_type, shift_amount, datasize);
+        // bits(datasize) result;
+        // result = operand1 AND operand2;
+        // PSTATE.<N,Z,C,V> = result<datasize-1>:IsZeroBit(result):'00';
+        // X[d, datasize] = result;
+    }
+
+macro getCASBVariante(L, o0) = \
+    if L == 1 && o0 == 0 then \
+        "casab" \
+    else \
+        if L == 1 && o0 == 1 then \
+            "casalb" \
+        else \
+            if L == 0 && o0 == 0 then \
+                "casab" \
+            else \
+                if L == 0 && o0 == 1 then \
+                    "caslb" \
+                else \
+                    "undefined casb??" \
+                endif \
+            endif \
+        endif \
+    endif
+
+
+op CASB(L:u1, Rs: REG_INDEX, o0:u1, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("%s %s, %s, [%s]", getCASBVariante(L, o0), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    image = format("0 0 0 0 1 0 0 0 1 %1b 1 %s %1b 1 1 1 1 1 %s %s", L, Rs.image, o0, Rn.image, Rt.image)
+    action = {
+        // if !HaveAtomicExt() then UNDEFINED;
+        // integer n = UInt(Rn);
+        // integer t = UInt(Rt);
+        // integer s = UInt(Rs);
+        // boolean acquire = L == '1';
+        // boolean release = o0 == '1';
+        // boolean tagchecked = n != 31;
+        // bits(64) address;
+        // bits(8) comparevalue;
+        // bits(8) newvalue;
+        // bits(8) data;
+        // AccessDescriptor accdesc = CreateAccDescAtomicOp(MemAtomicOp_CAS, acquire, release, tagchecked);
+        // comparevalue = X[s, 8];
+        // newvalue = X[t, 8];
+        // if n == 31 then
+        // CheckSPAlignment();
+        // address = SP[];
+        // else
+        // address = X[n, 64];
+        // data = MemAtomic(address, comparevalue, newvalue, accdesc);
+        // X[s, 32] = ZeroExtend(data, 32);
+    }
+
+macro getCASHVariante(L, o0) = \
+    if L == 1 && o0 == 0 then \
+        "casah" \
+    else if L == 1 && o0 == 1 then \
+        "casalh" \
+    else if L == 0 && o0 == 0 then \
+        "cash" \
+    else if L == 0 && o0 == 1 then \
+        "caslh" \
+    else "undefined casb??" \
+    endif \
+    endif \
+    endif \
+    endif
+
+op CASH(L:u1, Rs: REG_INDEX, o0:u1, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("%s %s, %s, [%s]", getCASHVariante(L, o0), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    image = format("0 1 0 0 1 0 0 0 1 %1b 1 %s %1b 1 1 1 1 1 %s %s", L, Rs.image, o0, Rn.image, Rt.image)
+    action = {
+        // if !HaveAtomicExt() then UNDEFINED;
+        // integer n = UInt(Rn);
+        // integer t = UInt(Rt);
+        // integer s = UInt(Rs);
+        // boolean acquire = L == '1';
+        // boolean release = o0 == '1';
+        // boolean tagchecked = n != 31;
+        // bits(64) address;
+        // bits(16) comparevalue;
+        // bits(16) newvalue;
+        // bits(16) data;
+        // AccessDescriptor accdesc = CreateAccDescAtomicOp(MemAtomicOp_CAS, acquire, release, tagchecked);
+        // comparevalue = X[s, 16];
+        // newvalue = X[t, 16];
+        // if n == 31 then
+        // CheckSPAlignment();
+        // address = SP[];
+        // else
+        // address = X[n, 64];
+        // data = MemAtomic(address, comparevalue, newvalue, accdesc);
+        // X[s, 32] = ZeroExtend(data, 32);
+    }
+
+macro getCASPVariante(sz, L, o0) = \
+    if sz == 0 && L == 0 && o0 == 0 then \
+        "casp" \
+    else if sz == 0 && L == 1 && o0 == 0 then \
+        "caspa" \
+    else if sz == 0 && L == 1 && o0 == 1 then \
+        "caspal" \
+    else if sz == 0 && L == 0 && o0 == 1 then \
+        "caspl" \
+    else if sz == 1 && L == 0 && o0 == 0 then \
+        "casp" \
+    else if sz == 1 && L == 1 && o0 == 0 then \
+        "caspa" \
+    else if sz == 1 && L == 1 && o0 == 1 then \
+        "caspal" \
+    else if sz == 1 && L == 0 && o0 == 1 then \
+        "caspl" \
+    else "undefined casb??" \
+    endif \
+    endif \
+    endif \
+    endif \
+    endif \
+    endif \
+    endif \
+    endif
+
+op CASP(sz:u1, L:u1, Rs:REG_INDEX, o0:u1, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("%s %s, %s, %s+1, [%s]", getCASPVariante(sz,L,o0), get32o64Reg(sz,Rs), get32o64Reg(sz,Rs), get32o64Reg(sz,Rt), get64RegoSP(Rn))
+    image = format("0 %1b 0 0 1 0 0 0 0 %1b 1 %s %1b 1 1 1 1 1 %s %s", sz, L, Rs.image, o0, Rn.image, Rt.image)
+    action = {
+        // if !HaveAtomicExt() then UNDEFINED;
+        // if Rs<0> == '1' then UNDEFINED;
+        // if Rt<0> == '1' then UNDEFINED;
+        // integer n = UInt(Rn);
+        // integer t = UInt(Rt);
+        // integer s = UInt(Rs);
+        // integer datasize = 32 << UInt(sz);
+        // boolean acquire = L == '1';
+        // boolean release = o0 == '1';
+        // boolean tagchecked = n != 31;
+        // bits(64) address;
+        // bits(2*datasize) comparevalue;
+        // bits(2*datasize) newvalue;
+        // bits(2*datasize) data;
+        // bits(datasize) s1 = X[s, datasize];
+        // bits(datasize) s2 = X[s+1, datasize];
+        // bits(datasize) t1 = X[t, datasize];
+        // bits(datasize) t2 = X[t+1, datasize];
+        // AccessDescriptor accdesc = CreateAccDescAtomicOp(MemAtomicOp_CAS, acquire, release, tagchecked);
+        // comparevalue = if BigEndian(accdesc.acctype) then s1:s2 else s2:s1;
+        // newvalue = if BigEndian(accdesc.acctype) then t1:t2 else t2:t1;
+        // if n == 31 then
+        // CheckSPAlignment();
+        // address = SP[];
+        // else
+        // address = X[n, 64];
+        // data = MemAtomic(address, comparevalue, newvalue, accdesc);
+        // if BigEndian(accdesc.acctype) then
+        // X[s, datasize] = data<2*datasize-1:datasize>;
+        // X[s+1, datasize] = data<datasize-1:0>;
+        // else
+        // X[s, datasize] = data<datasize-1:0>;
+        // X[s+1, datasize] = data<2*datasize-1:datasize>;
+    }
+
+macro getCASVariante(sz, L, o0) = \
+    if sz == 0 && L == 0 && o0 == 0 then \
+        "cas" \
+    else if sz == 0 && L == 1 && o0 == 0 then \
+        "casa" \
+    else if sz == 0 && L == 1 && o0 == 1 then \
+        "casal" \
+    else if sz == 0 && L == 0 && o0 == 1 then \
+        "casl" \
+    else if sz == 1 && L == 0 && o0 == 0 then \
+        "cas" \
+    else if sz == 1 && L == 1 && o0 == 0 then \
+        "casa" \
+    else if sz == 1 && L == 1 && o0 == 1 then \
+        "casal" \
+    else if sz == 1 && L == 0 && o0 == 1 then \
+        "casl" \
+    else "undefined casb??" \
+    endif \
+    endif \
+    endif \
+    endif \
+    endif \
+    endif \
+    endif \
+    endif
+
+op CAS(sz:u1, L:u1, Rs:REG_INDEX, o0:u1, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("%s %s, %s, [%s]", getCASVariante(sz,L,o0), get32o64Reg(sz,Rs), get64RegoSP(Rn), get64RegoSP(Rt))
+    image = format("1 %1b 0 0 1 0 0 0 1 %1b 1 %s %1b 1 1 1 1 1 %s %s", sz, L, Rs.image, o0, Rn.image, Rt.image)
+    action = {
+        // if !HaveAtomicExt() then UNDEFINED;
+        // integer n = UInt(Rn);
+        // integer t = UInt(Rt);
+        // integer s = UInt(Rs);
+        // integer datasize = 8 << UInt(size);
+        // integer regsize = if datasize == 64 then 64 else 32;
+        // boolean acquire = L == '1';
+        // boolean release = o0 == '1';
+        // boolean tagchecked = n != 31;
+        // bits(64) address;
+        // bits(datasize) comparevalue;
+        // bits(datasize) newvalue;
+        // bits(datasize) data;
+        // AccessDescriptor accdesc = CreateAccDescAtomicOp(MemAtomicOp_CAS, acquire, release, tagchecked);
+        // comparevalue = X[s, datasize];
+        // newvalue = X[t, datasize];
+        // if n == 31 then
+        // CheckSPAlignment();
+        // address = SP[];
+        // else
+        // address = X[n, 64];
+        // data = MemAtomic(address, comparevalue, newvalue, accdesc);
+        // X[s, regsize] = ZeroExtend(data, regsize);
+    }
+
+op CCMN_immediate(sf:u1, imm5:u5, cond:u4, Rn:REG_INDEX, nzcv: u4)
+    syntax = format("ccmn %s, #%d, #%d, %d", get32o64Reg(sf, Rn), imm5, nzcv, cond)
+    image = format("%1b 0 1 1 1 0 1 0 0 1 0 %5b %4b 1 0%s0%4b", sf, imm5, cond, Rn.image, nzcv)
+    action = {
+    // integer n = UInt(Rn);
+    // integer datasize = if sf == '1' then 64 else 32;
+    // bits(4) flags = nzcv;
+    // bits(datasize) imm = ZeroExtend(imm5, datasize);
+    // if ConditionHolds(cond) then
+    // bits(datasize) operand1 = X[n, datasize];
+    // (-, flags) = AddWithCarry(operand1, imm, '0');
+    // PSTATE.<N,Z,C,V> = flags;
+    }
+op CCMN_register(sf:u1, Rm:REG_INDEX, cond:u4, Rn:REG_INDEX, nzcv: u4)
+    syntax = format("ccmn %s, %s, #%d, %d", get32o64Reg(sf, Rn), get32o64Reg(sf, Rm), nzcv, cond)
+    image = format("%1b 0 1 1 1 0 1 0 0 1 0 %s %4b 0 0 %s0%4b", sf, Rm.image, cond, Rn.image, nzcv)
+    action = {
+    // integer n = UInt(Rn);
+    // integer m = UInt(Rm);
+    // integer datasize = if sf == '1' then 64 else 32;
+    // bits(4) flags = nzcv;
+    // if ConditionHolds(cond) then
+    // bits(datasize) operand1 = X[n, datasize];
+    // bits(datasize) operand2 = X[m, datasize];
+    // (-, flags) = AddWithCarry(operand1, operand2, '0');
+    // PSTATE.<N,Z,C,V> = flags;
+    }
+
+op CCMP_immediate(sf:u1, imm5:u5, cond:u4, Rn:REG_INDEX, nzcv: u4)
+    syntax = format("ccmp %s, #%d, #%d, %d", get32o64Reg(sf, Rn), imm5, nzcv, cond)
+    image = format("%1b 1 1 1 1 0 1 0 0 1 0 %5b %4b1 0%s0%4b", sf, imm5, cond, Rn.image, nzcv)
+    action = {
+        // integer n = UInt(Rn);
+        // integer datasize = if sf == '1' then 64 else 32;
+        // bits(4) flags = nzcv;
+        // bits(datasize) imm = ZeroExtend(imm5, datasize);
+        // if ConditionHolds(cond) then
+        // bits(datasize) operand1 = X[n, datasize];
+        // bits(datasize) operand2;
+        // operand2 = NOT(imm);
+        // (-, flags) = AddWithCarry(operand1, operand2, '1');
+        // PSTATE.<N,Z,C,V> = flags;
+    }
+op CCMP_register(sf:u1, Rm:REG_INDEX, cond:u4, Rn:REG_INDEX, nzcv: u4)
+    syntax = format("ccmp %s, %s, #%d, %d", get32o64Reg(sf, Rn), get32o64Reg(sf, Rm), nzcv, cond)
+    image = format("%1b 1 1 1 1 0 1 0 0 1 0%s%4b0 0%s0%4b", sf, Rm.image, cond, Rn.image, nzcv)
+    action = {
+        // integer n = UInt(Rn);
+        // integer m = UInt(Rm);
+        // integer datasize = if sf == '1' then 64 else 32;
+        // bits(4) flags = nzcv;
+
+        // if ConditionHolds(cond) then
+        // bits(datasize) operand1 = X[n, datasize];
+        // bits(datasize) operand2 = X[m, datasize];
+        // operand2 = NOT(operand2);
+        // (-, flags) = AddWithCarry(operand1, operand2, '1');
+        // PSTATE.<N,Z,C,V> = flags;
+    }

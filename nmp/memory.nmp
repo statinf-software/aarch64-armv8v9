@@ -1,0 +1,1067 @@
+op memory = CPYFP | CPYFPN | CPYFPRN | CPYFPRT | CPYFPRTN | CPYFPRTRN | CPYFPRTWN |
+    CPYFPT | CPYFPTN | CPYFPTRN | CPYFPTWN | CPYFPWN | CPYFPWT | CPYFPWTN | CPYFPWTRN | CPYFPWTWN |
+    CPYP | CPYPN | CPYPRN | CPYPRT | CPYPRTN | CPYPRTRN | CPYPRTWN | 
+    CPYPT | CPYPTN | CPYPTRN | CPYPTWN | CPYPWN | CPYPWT | CPYPWTRN | CPYPWTWN |
+    CSDB 
+
+macro getCPYFPVariant(op1) = \
+    if op1 == 2 then \
+        "cpyfe" \
+    else if op1 == 1 then \
+            "cpyfm" \
+        else if op1 == 0 then \
+                "cpyfp" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYFP(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b0 1 1 0 0 1%2b0%s0 0 0 0 0 1%s%s", sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+        // if !HaveFeatMOPS() then UNDEFINED;
+        // if sz != '00' then UNDEFINED;
+        // integer d = UInt(Rd);
+        // integer s = UInt(Rs);
+        // integer n = UInt(Rn);
+        // bits(4) options = op2;
+        // MOPSStage stage;
+        // case op1 of
+        // when '00' stage = MOPSStage_Prologue;
+        // when '01' stage = MOPSStage_Main;
+        // when '10' stage = MOPSStage_Epilogue;
+        // otherwise SEE "Memory Copy and Memory Set";
+        // CheckMOPSEnabled();
+        // if s == n || s == d || n == d || d == 31 || s == 31 || n == 31 then
+        // c = ConstrainUnpredictable(Unpredictable_MOPSOVERLAP31);
+        // assert c IN {Constraint_UNDEF, Constraint_NOP};
+        // case c of
+        // when Constraint_UNDEF UNDEFINED;
+        // when Constraint_NOP
+        // EndOfInstruction();
+        // integer N = MaxBlockSizeCopiedBytes();
+        // bits(64) toaddress = X[d, 64];
+        // bits(64) fromaddress = X[s, 64];
+        // bits(64) cpysize = X[n, 64];
+        // bits(4) nzcv = PSTATE.<N,Z,C,V>;
+        // bits(64) stagecpysize;
+        // bits(8*N) readdata;
+        // integer B;
+        // boolean supports_option_a = CPYFOptionA();
+        // boolean rprivileged;
+        // boolean wprivileged;
+        // case PSTATE.EL of
+        // when EL0
+        // rprivileged = FALSE;
+        // wprivileged = FALSE;
+        // when EL1
+        // if EL2Enabled() && HaveNVExt() && HCR_EL2.<NV,NV1> == '11' then
+        // rprivileged = TRUE;
+        // wprivileged = TRUE;
+        // else
+        // rprivileged = options<1> == '0';
+        // wprivileged = options<0> == '0';
+        // when EL2
+        // if HaveVirtHostExt() && HCR_EL2.<E2H,TGE> == '11' then
+        // rprivileged = options<1> == '0';
+        // wprivileged = options<0> == '0';
+        // else
+        // rprivileged = TRUE;
+        // wprivileged = TRUE;
+        // when EL3
+        // rprivileged = TRUE;
+        // wprivileged = TRUE;
+        // if HaveUAOExt() && PSTATE.UAO == '1' then
+        // rprivileged = PSTATE.EL != EL0;
+        // wprivileged = PSTATE.EL != EL0;
+        // boolean rnontemporal = options<3> == '1';
+        // boolean wnontemporal = options<2> == '1';
+        // AccessDescriptor raccdesc = CreateAccDescMOPS(MemOp_LOAD, rprivileged, rnontemporal);
+        // AccessDescriptor waccdesc = CreateAccDescMOPS(MemOp_STORE, wprivileged, wnontemporal);
+        // if stage == MOPSStage_Prologue then
+        // if cpysize<63> == '1' then cpysize = 0x7FFFFFFFFFFFFFFF<63:0>;
+        // if supports_option_a then
+        // nzcv = '0000';
+        // // Copy in the forward direction offsets the arguments.
+        // toaddress = toaddress + cpysize;
+        // fromaddress = fromaddress + cpysize;
+        // cpysize = Zeros(64) - cpysize;
+        // else
+        // nzcv = '0010';
+        // // IMP DEF selection of the amount covered by pre-processing.
+        // stagecpysize = CPYPreSizeChoice(toaddress, fromaddress, cpysize);
+        // assert stagecpysize<63> == cpysize<63> || stagecpysize == Zeros(64);
+        // if SInt(cpysize) > 0 then
+        // assert SInt(stagecpysize) <= SInt(cpysize);
+        // else
+        // assert SInt(stagecpysize) >= SInt(cpysize);
+        // else
+        // boolean zero_size_exceptions = MemCpyZeroSizeCheck();
+        // // Check if this version is consistent with the state of the call.
+        // if zero_size_exceptions || SInt(cpysize) != 0 then
+        // if supports_option_a then
+        // if nzcv<1> == '1' then // PSTATE.C
+        // boolean wrong_option = TRUE;
+        // boolean from_epilogue = stage == MOPSStage_Epilogue;
+        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue,options);
+        // else
+        // if nzcv<1> == '0' then // PSTATE.C
+        // boolean wrong_option = TRUE;
+        // boolean from_epilogue = stage == MOPSStage_Epilogue;
+        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue,
+        // options);
+        // bits(64) postsize = CPYPostSizeChoice(toaddress, fromaddress, cpysize);
+        // assert postsize<63> == cpysize<63> || SInt(postsize) == 0;
+        // if stage == MOPSStage_Main then
+        // stagecpysize = cpysize - postsize;
+        // // Check if the parameters to this instruction are valid.
+        // if MemCpyParametersIllformedM(toaddress, fromaddress, cpysize) then
+        // boolean wrong_option = FALSE;
+        // boolean from_epilogue = FALSE;
+        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue, options);
+        // else
+        // stagecpysize = postsize;
+        // // Check if the parameters to this instruction are valid for the epilogue.
+        // if (cpysize != postsize || MemCpyParametersIllformedE(toaddress, fromaddress, cpysize)) then
+        // boolean wrong_option = FALSE;
+        // boolean from_epilogue = TRUE;
+        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue, options);
+        // if supports_option_a then
+        // while SInt(stagecpysize) != 0 do
+        // // IMP DEF selection of the block size that is worked on. While many
+        // // implementations might make this constant, that is not assumed.
+        // B = CPYSizeChoice(toaddress, fromaddress, cpysize);
+        // assert B <= -1 * SInt(stagecpysize);
+        // readdata<B*8-1:0> = Mem[fromaddress+cpysize, B, raccdesc];
+        // Mem[toaddress+cpysize, B, waccdesc] = readdata<B*8-1:0>;
+        // cpysize = cpysize + B;
+        // stagecpysize = stagecpysize + B;
+        // if stage != MOPSStage_Prologue then
+        // X[n, 64] = cpysize;
+        // else
+        // while UInt(stagecpysize) > 0 do
+        // // IMP DEF selection of the block size that is worked on. While many
+        // // implementations might make this constant, that is not assumed.
+        // B = CPYSizeChoice(toaddress, fromaddress, cpysize);
+        // assert B <= UInt(stagecpysize);
+        // readdata<B*8-1:0> = Mem[fromaddress, B, raccdesc];
+        // Mem[toaddress, B, waccdesc] = readdata<B*8-1:0>;
+        // fromaddress = fromaddress + B;
+        // toaddress = toaddress + B;
+        // cpysize = cpysize - B;
+        // stagecpysize = stagecpysize - B;
+        // if stage != MOPSStage_Prologue then
+        // X[n, 64] = cpysize;
+        // X[d, 64] = toaddress;
+        // X[s, 64] = fromaddress;
+        // if stage == MOPSStage_Prologue then
+        // X[n, 64] = cpysize;
+        // X[d, 64] = toaddress;
+        // X[s, 64] = fromaddress;
+        // PSTATE.<N,Z,C,V> = nzcv;
+    }
+
+macro getCPYFPNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyfen" \
+    else if op1 == 1 then \
+            "cpyfmn" \
+        else if op1 == 0 then \
+                "cpyfpn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYFPN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!,[%s]!,%s!", getCPYFPNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b0 1 1 0 0 1%2b0%s1 1 0 0 0 1%s%s", sz, op1, Rs.image, Rn.image, Rd.image)
+    action = {
+        // if !HaveFeatMOPS() then UNDEFINED;
+        // if sz != '00' then UNDEFINED;
+        // integer d = UInt(Rd);
+        // integer s = UInt(Rs);
+        // integer n = UInt(Rn);
+        // bits(4) options = op2;
+        // MOPSStage stage;
+        // case op1 of
+        // when '00' stage = MOPSStage_Prologue;
+        // when '01' stage = MOPSStage_Main;
+        // when '10' stage = MOPSStage_Epilogue;
+        // otherwise SEE "Memory Copy and Memory Set";
+        // CheckMOPSEnabled();
+        // if s == n || s == d || n == d || d == 31 || s == 31 || n == 31 then
+        // c = ConstrainUnpredictable(Unpredictable_MOPSOVERLAP31);
+        // assert c IN {Constraint_UNDEF, Constraint_NOP};
+        // case c of
+        // when Constraint_UNDEF UNDEFINED;
+        // when Constraint_NOP
+        // EndOfInstruction();
+        // integer N = MaxBlockSizeCopiedBytes();
+        // bits(64) toaddress = X[d, 64];
+        // bits(64) fromaddress = X[s, 64];
+        // bits(64) cpysize = X[n, 64];
+        // bits(4) nzcv = PSTATE.<N,Z,C,V>;
+        // bits(64) stagecpysize;
+
+        // bits(8*N) readdata;
+        // integer B;
+        // boolean supports_option_a = CPYFOptionA();
+        // boolean rprivileged;
+        // boolean wprivileged;
+        // case PSTATE.EL of
+        // when EL0
+        // rprivileged = FALSE;
+        // wprivileged = FALSE;
+        // when EL1
+        // if EL2Enabled() && HaveNVExt() && HCR_EL2.<NV,NV1> == '11' then
+        // rprivileged = TRUE;
+        // wprivileged = TRUE;
+        // else
+        // rprivileged = options<1> == '0';
+        // wprivileged = options<0> == '0';
+        // when EL2
+        // if HaveVirtHostExt() && HCR_EL2.<E2H,TGE> == '11' then
+        // rprivileged = options<1> == '0';
+        // wprivileged = options<0> == '0';
+        // else
+        // rprivileged = TRUE;
+        // wprivileged = TRUE;
+        // when EL3
+        // rprivileged = TRUE;
+        // wprivileged = TRUE;
+        // if HaveUAOExt() && PSTATE.UAO == '1' then
+        // rprivileged = PSTATE.EL != EL0;
+        // wprivileged = PSTATE.EL != EL0;
+        // boolean rnontemporal = options<3> == '1';
+        // boolean wnontemporal = options<2> == '1';
+        // AccessDescriptor raccdesc = CreateAccDescMOPS(MemOp_LOAD, rprivileged, rnontemporal);
+        // AccessDescriptor waccdesc = CreateAccDescMOPS(MemOp_STORE, wprivileged, wnontemporal);
+        // if stage == MOPSStage_Prologue then
+        // if cpysize<63> == '1' then cpysize = 0x7FFFFFFFFFFFFFFF<63:0>;
+        // if supports_option_a then
+        // nzcv = '0000';
+        // // Copy in the forward direction offsets the arguments.
+        // toaddress = toaddress + cpysize;
+        // fromaddress = fromaddress + cpysize;
+        // cpysize = Zeros(64) - cpysize;
+        // else
+        // nzcv = '0010';
+        // // IMP DEF selection of the amount covered by pre-processing.
+        // stagecpysize = CPYPreSizeChoice(toaddress, fromaddress, cpysize);
+        // assert stagecpysize<63> == cpysize<63> || stagecpysize == Zeros(64);
+        // if SInt(cpysize) > 0 then
+        // assert SInt(stagecpysize) <= SInt(cpysize);
+        // else
+        // assert SInt(stagecpysize) >= SInt(cpysize);
+        // else
+        // boolean zero_size_exceptions = MemCpyZeroSizeCheck();
+        // // Check if this version is consistent with the state of the call.
+        // if zero_size_exceptions || SInt(cpysize) != 0 then
+        // if supports_option_a then
+        // if nzcv<1> == '1' then // PSTATE.C
+        // boolean wrong_option = TRUE;
+        // boolean from_epilogue = stage == MOPSStage_Epilogue;
+        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue,options);
+        // else
+        // if nzcv<1> == '0' then // PSTATE.C
+        // boolean wrong_option = TRUE;
+        // boolean from_epilogue = stage == MOPSStage_Epilogue;
+        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue,
+        // options);
+        // bits(64) postsize = CPYPostSizeChoice(toaddress, fromaddress, cpysize);
+        // assert postsize<63> == cpysize<63> || SInt(postsize) == 0;
+        // if stage == MOPSStage_Main then
+        // stagecpysize = cpysize - postsize;
+        // // Check if the parameters to this instruction are valid.
+        // if MemCpyParametersIllformedM(toaddress, fromaddress, cpysize) then
+        // boolean wrong_option = FALSE;
+        // boolean from_epilogue = FALSE;
+        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue, options);
+        // else
+        // stagecpysize = postsize;
+        // // Check if the parameters to this instruction are valid for the epilogue.
+        // if (cpysize != postsize || MemCpyParametersIllformedE(toaddress, fromaddress, cpysize)) then
+        // boolean wrong_option = FALSE;
+        // boolean from_epilogue = TRUE;
+        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue, options);
+        // if supports_option_a then
+        // while SInt(stagecpysize) != 0 do
+        // // IMP DEF selection of the block size that is worked on. While many
+        // // implementations might make this constant, that is not assumed.
+        // B = CPYSizeChoice(toaddress, fromaddress, cpysize);
+        // assert B <= -1 * SInt(stagecpysize);
+        // readdata<B*8-1:0> = Mem[fromaddress+cpysize, B, raccdesc];
+        // Mem[toaddress+cpysize, B, waccdesc] = readdata<B*8-1:0>;
+        // cpysize = cpysize + B;
+        // stagecpysize = stagecpysize + B;
+        // if stage != MOPSStage_Prologue then
+        // X[n, 64] = cpysize;
+        // else
+        // while UInt(stagecpysize) > 0 do
+        // // IMP DEF selection of the block size that is worked on. While many
+        // // implementations might make this constant, that is not assumed.
+        // B = CPYSizeChoice(toaddress, fromaddress, cpysize);
+        // assert B <= UInt(stagecpysize);
+        // readdata<B*8-1:0> = Mem[fromaddress, B, raccdesc];
+        // Mem[toaddress, B, waccdesc] = readdata<B*8-1:0>;
+        // fromaddress = fromaddress + B;
+        // toaddress = toaddress + B;
+        // cpysize = cpysize - B;
+        // stagecpysize = stagecpysize - B;
+        // if stage != MOPSStage_Prologue then
+        // X[n, 64] = cpysize;
+        // X[d, 64] = toaddress;
+        // X[s, 64] = fromaddress;
+        // if stage == MOPSStage_Prologue then
+        // X[n, 64] = cpysize;
+        // X[d, 64] = toaddress;
+        // X[s, 64] = fromaddress;
+        // PSTATE.<N,Z,C,V> = nzcv;
+    }
+
+macro getCPYFPRNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyfern" \
+    else if op1 == 1 then \
+            "cpyfmrn" \
+        else if op1 == 0 then \
+                "cpyfprn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYFPRN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPRNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b0 1 1 0 0 1%2b 0 %s 1 0 0 0 0 1 %s%s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+        // if !HaveFeatMOPS() then UNDEFINED;
+        // if sz != '00' then UNDEFINED;
+        // integer d = UInt(Rd);
+        // integer s = UInt(Rs);
+        // integer n = UInt(Rn);
+        // bits(4) options = op2;
+        // MOPSStage stage;
+        // case op1 of
+        // when '00' stage = MOPSStage_Prologue;
+        // when '01' stage = MOPSStage_Main;
+        // when '10' stage = MOPSStage_Epilogue;
+        // otherwise SEE "Memory Copy and Memory Set";
+        // CheckMOPSEnabled();
+        // if s == n || s == d || n == d || d == 31 || s == 31 || n == 31 then
+        // c = ConstrainUnpredictable(Unpredictable_MOPSOVERLAP31);
+        // assert c IN {Constraint_UNDEF, Constraint_NOP};
+        // case c of
+        // when Constraint_UNDEF UNDEFINED;
+        // when Constraint_NOP
+        // EndOfInstruction();
+        // integer N = MaxBlockSizeCopiedBytes();
+        // bits(64) toaddress = X[d, 64];
+        // bits(64) fromaddress = X[s, 64];
+        // bits(64) cpysize = X[n, 64];
+        // bits(4) nzcv = PSTATE.<N,Z,C,V>;
+        // bits(64) stagecpysize;
+
+        // bits(8*N) readdata;
+        // integer B;
+        // boolean supports_option_a = CPYFOptionA();
+        // boolean rprivileged;
+        // boolean wprivileged;
+        // case PSTATE.EL of
+        // when EL0
+        // rprivileged = FALSE;
+        // wprivileged = FALSE;
+        // when EL1
+        // if EL2Enabled() && HaveNVExt() && HCR_EL2.<NV,NV1> == '11' then
+        // rprivileged = TRUE;
+        // wprivileged = TRUE;
+        // else
+        // rprivileged = options<1> == '0';
+        // wprivileged = options<0> == '0';
+        // when EL2
+        // if HaveVirtHostExt() && HCR_EL2.<E2H,TGE> == '11' then
+        // rprivileged = options<1> == '0';
+        // wprivileged = options<0> == '0';
+        // else
+        // rprivileged = TRUE;
+        // wprivileged = TRUE;
+        // when EL3
+        // rprivileged = TRUE;
+        // wprivileged = TRUE;
+        // if HaveUAOExt() && PSTATE.UAO == '1' then
+        // rprivileged = PSTATE.EL != EL0;
+        // wprivileged = PSTATE.EL != EL0;
+        // boolean rnontemporal = options<3> == '1';
+        // boolean wnontemporal = options<2> == '1';
+        // AccessDescriptor raccdesc = CreateAccDescMOPS(MemOp_LOAD, rprivileged, rnontemporal);
+        // AccessDescriptor waccdesc = CreateAccDescMOPS(MemOp_STORE, wprivileged, wnontemporal);
+        // if stage == MOPSStage_Prologue then
+        // if cpysize<63> == '1' then cpysize = 0x7FFFFFFFFFFFFFFF<63:0>;
+        // if supports_option_a then
+        // nzcv = '0000';
+        // // Copy in the forward direction offsets the arguments.
+        // toaddress = toaddress + cpysize;
+        // fromaddress = fromaddress + cpysize;
+        // cpysize = Zeros(64) - cpysize;
+        // else
+        // nzcv = '0010';
+        // // IMP DEF selection of the amount covered by pre-processing.
+        // stagecpysize = CPYPreSizeChoice(toaddress, fromaddress, cpysize);
+        // assert stagecpysize<63> == cpysize<63> || stagecpysize == Zeros(64);
+        // if SInt(cpysize) > 0 then
+        // assert SInt(stagecpysize) <= SInt(cpysize);
+        // else
+        // assert SInt(stagecpysize) >= SInt(cpysize);
+        // else
+        // boolean zero_size_exceptions = MemCpyZeroSizeCheck();
+        // // Check if this version is consistent with the state of the call.
+        // if zero_size_exceptions || SInt(cpysize) != 0 then
+        // if supports_option_a then
+        // if nzcv<1> == '1' then // PSTATE.C
+        // boolean wrong_option = TRUE;
+        // boolean from_epilogue = stage == MOPSStage_Epilogue;
+        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue,options);
+        // else
+        // if nzcv<1> == '0' then // PSTATE.C
+        // boolean wrong_option = TRUE;
+        // boolean from_epilogue = stage == MOPSStage_Epilogue;
+        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue,
+        // options);
+        // bits(64) postsize = CPYPostSizeChoice(toaddress, fromaddress, cpysize);
+        // assert postsize<63> == cpysize<63> || SInt(postsize) == 0;
+        // if stage == MOPSStage_Main then
+        // stagecpysize = cpysize - postsize;
+        // // Check if the parameters to this instruction are valid.
+        // if MemCpyParametersIllformedM(toaddress, fromaddress, cpysize) then
+        // boolean wrong_option = FALSE;
+        // boolean from_epilogue = FALSE;
+        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue, options);
+        // else
+        // stagecpysize = postsize;
+        // // Check if the parameters to this instruction are valid for the epilogue.
+        // if (cpysize != postsize || MemCpyParametersIllformedE(toaddress, fromaddress, cpysize)) then
+        // boolean wrong_option = FALSE;
+        // boolean from_epilogue = TRUE;
+        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue, options);
+        // if supports_option_a then
+        // while SInt(stagecpysize) != 0 do
+        // // IMP DEF selection of the block size that is worked on. While many
+        // // implementations might make this constant, that is not assumed.
+        // B = CPYSizeChoice(toaddress, fromaddress, cpysize);
+        // assert B <= -1 * SInt(stagecpysize);
+        // readdata<B*8-1:0> = Mem[fromaddress+cpysize, B, raccdesc];
+        // Mem[toaddress+cpysize, B, waccdesc] = readdata<B*8-1:0>;
+        // cpysize = cpysize + B;
+        // stagecpysize = stagecpysize + B;
+        // if stage != MOPSStage_Prologue then
+        // X[n, 64] = cpysize;
+        // else
+        // while UInt(stagecpysize) > 0 do
+        // // IMP DEF selection of the block size that is worked on. While many
+        // // implementations might make this constant, that is not assumed.
+        // B = CPYSizeChoice(toaddress, fromaddress, cpysize);
+        // assert B <= UInt(stagecpysize);
+        // readdata<B*8-1:0> = Mem[fromaddress, B, raccdesc];
+        // Mem[toaddress, B, waccdesc] = readdata<B*8-1:0>;
+        // fromaddress = fromaddress + B;
+        // toaddress = toaddress + B;
+        // cpysize = cpysize - B;
+        // stagecpysize = stagecpysize - B;
+        // if stage != MOPSStage_Prologue then
+        // X[n, 64] = cpysize;
+        // X[d, 64] = toaddress;
+        // X[s, 64] = fromaddress;
+        // if stage == MOPSStage_Prologue then
+        // X[n, 64] = cpysize;
+        // X[d, 64] = toaddress;
+        // X[s, 64] = fromaddress;
+        // PSTATE.<N,Z,C,V> = nzcv;
+    }
+
+macro getCPYFPRTVariant(op1) = \
+    if op1 == 2 then \
+        "cpyfert" \
+    else if op1 == 1 then \
+            "cpyfmrt" \
+        else if op1 == 0 then \
+                "cpyfprt" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYFPRT(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPRTVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 0 1 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYFPRTNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyfertn" \
+    else if op1 == 1 then \
+            "cpyfmrtn" \
+        else if op1 == 0 then \
+                "cpyfprtn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYFPRTN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPRTNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 1 1 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYFPRTRNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyfertrn" \
+    else if op1 == 1 then \
+            "cpyfmrtrn" \
+        else if op1 == 0 then \
+                "cpyfprtrn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYFPRTRN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPRTRNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 0 1 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYFPRTWNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyfertwn" \
+    else if op1 == 1 then \
+            "cpyfmrtwn" \
+        else if op1 == 0 then \
+                "cpyfprtwn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYFPRTWN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPRTWNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 1 1 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYFPTVariant(op1) = \
+    if op1 == 2 then \
+        "cpyfet" \
+    else if op1 == 1 then \
+            "cpyfmt" \
+        else if op1 == 0 then \
+                "cpyfpt" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYFPT(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPTVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 0 1 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYFPTNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyfetn" \
+    else if op1 == 1 then \
+            "cpyfmtn" \
+        else if op1 == 0 then \
+                "cpyfptn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYFPTN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPTNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 1 1 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYFPTRNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyfetrn" \
+    else if op1 == 1 then \
+            "cpyfmtrn" \
+        else if op1 == 0 then \
+                "cpyfptrn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYFPTRN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPTRNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 0 1 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYFPTWNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyfetwn" \
+    else if op1 == 1 then \
+            "cpyfmtwn" \
+        else if op1 == 0 then \
+                "cpyfptwn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYFPTWN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPTWNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 1 1 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYFPWNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyfewn" \
+    else if op1 == 1 then \
+            "cpyfmwn" \
+        else if op1 == 0 then \
+                "cpyfpwn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYFPWN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPWNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 1 0 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYFPWTVariant(op1) = \
+    if op1 == 2 then \
+        "cpyfewt" \
+    else if op1 == 1 then \
+            "cpyfmwt" \
+        else if op1 == 0 then \
+                "cpyfpwt" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYFPWT(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPWTVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 0 0 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYFPWTNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyfewtn" \
+    else if op1 == 1 then \
+            "cpyfmwtn" \
+        else if op1 == 0 then \
+                "cpyfpwtn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYFPWTN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPWTNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 1 0 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYFPWTRNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyfewtn" \
+    else if op1 == 1 then \
+            "cpyfmwtn" \
+        else if op1 == 0 then \
+                "cpyfpwtn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYFPWTRN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPWTRNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 0 0 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYFPWTWNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyfewtwn" \
+    else if op1 == 1 then \
+            "cpyfmwtwn" \
+        else if op1 == 0 then \
+                "cpyfpwtwn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYFPWTWN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPWTWNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 1 0 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYPVariant(op1) = \
+    if op1 == 2 then \
+        "cpye" \
+    else if op1 == 1 then \
+            "cpym" \
+        else if op1 == 0 then \
+                "cpyp" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYP(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 0 0 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYPNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyen" \
+    else if op1 == 1 then \
+            "cpymn" \
+        else if op1 == 0 then \
+                "cpypn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYPN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 0 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYPRNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyern" \
+    else if op1 == 1 then \
+            "cpymrn" \
+        else if op1 == 0 then \
+                "cpyprn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYPRN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPRNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 0 0 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYPRTVariant(op1) = \
+    if op1 == 2 then \
+        "cpyert" \
+    else if op1 == 1 then \
+            "cpymrt" \
+        else if op1 == 0 then \
+                "cpyprt" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYPRT(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPRTVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 0 1 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYPRTNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyertn" \
+    else if op1 == 1 then \
+            "cpymrtn" \
+        else if op1 == 0 then \
+                "cpyprtn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYPRTN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPRTNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 1 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYPRTRNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyertrn" \
+    else if op1 == 1 then \
+            "cpymrtrn" \
+        else if op1 == 0 then \
+                "cpyprtrn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYPRTRN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPRTRNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 0 1 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYPRTWNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyertwn" \
+    else if op1 == 1 then \
+            "cpymrtwn" \
+        else if op1 == 0 then \
+                "cpyprtwn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYPRTWN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPRTWNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 1 1 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYPTVariant(op1) = \
+    if op1 == 2 then \
+        "cpyet" \
+    else if op1 == 1 then \
+            "cpymt" \
+        else if op1 == 0 then \
+                "cpypt" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYPT(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPTVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 0 1 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYPTNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyetn" \
+    else if op1 == 1 then \
+            "cpymtn" \
+        else if op1 == 0 then \
+                "cpyptn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYPTN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPTNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 1 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYPTRNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyetrn" \
+    else if op1 == 1 then \
+            "cpymtrn" \
+        else if op1 == 0 then \
+                "cpyptrn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYPTRN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPTRNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 0 1 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYPTWNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyetwn" \
+    else if op1 == 1 then \
+            "cpymtwn" \
+        else if op1 == 0 then \
+                "cpyptwn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYPTWN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPTWNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 1 1 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYPWNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyewn" \
+    else if op1 == 1 then \
+            "cpymwn" \
+        else if op1 == 0 then \
+                "cpypwn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYPWN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPWNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 1 0 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYPWTVariant(op1) = \
+    if op1 == 2 then \
+        "cpyewt" \
+    else if op1 == 1 then \
+            "cpymwt" \
+        else if op1 == 0 then \
+                "cpypwt" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYPWT(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPWTVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 0 0 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYPWTNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyewtn" \
+    else if op1 == 1 then \
+            "cpymwtn" \
+        else if op1 == 0 then \
+                "cpypwtn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYPWTN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPWTNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 0 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYPWTRNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyewtrn" \
+    else if op1 == 1 then \
+            "cpymwtrn" \
+        else if op1 == 0 then \
+                "cpypwtrn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYPWTRN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPWTRNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 0 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+macro getCPYPWTWNVariant(op1) = \
+    if op1 == 2 then \
+        "cpyewtwn" \
+    else if op1 == 1 then \
+            "cpymwtwn" \
+        else if op1 == 0 then \
+                "cpypwtwn" \
+            else \
+                "undefined cpy??" \
+            endif \
+        endif \
+    endif
+
+op CPYPWTWN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPWTWNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 1 0 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CSDB()
+    syntax = "csdb"
+    image = "1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 0 0 0 1 0 1 0 0 1 1 1 1 1"
+    action = {
+        //ConsumptionOfSpeculativeDataBarrier();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

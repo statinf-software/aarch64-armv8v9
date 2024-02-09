@@ -1,0 +1,2160 @@
+
+
+
+
+
+op CSNEG()
+    syntax = format("csneg")
+    image = format("")
+    action = {
+    }
+op DC()
+    syntax = format("dc")
+    image = format("")
+    action = {
+    }
+op DCPS1()
+    syntax = format("dcps1")
+    image = format("")
+    action = {
+    }
+op DCPS2()
+    syntax = format("dcps2")
+    image = format("")
+    action = {
+    }
+op DCPS3()
+    syntax = format("dcps3")
+    image = format("")
+    action = {
+    }
+op DGH()
+    syntax = format("dgh")
+    image = format("")
+    action = {
+    }
+op DMB()
+    syntax = format("dmb")
+    image = format("")
+    action = {
+    }
+op DRPS()
+    syntax = format("drps")
+    image = format("")
+    action = {
+    }
+op DSB()
+    syntax = format("dsb")
+    image = format("")
+    action = {
+    }
+op DVP()
+    syntax = format("dvp")
+    image = format("")
+    action = {
+    }
+op EON()
+    syntax = format("eon")
+    image = format("")
+    action = {
+    }
+op EOR()
+    syntax = format("eor")
+    image = format("")
+    action = {
+    }
+op EOR()
+    syntax = format("eor")
+    image = format("")
+    action = {
+    }
+op ERET()
+    syntax = format("eret")
+    image = format("")
+    action = {
+    }
+op ERETAA()
+    syntax = format("eretaa")
+    image = format("")
+    action = {
+    }
+op ERETAB()
+    syntax = format("eretab")
+    image = format("")
+    action = {
+    }
+op ESB()
+    syntax = format("esb")
+    image = format("")
+    action = {
+    }
+op EXTR()
+    syntax = format("extr")
+    image = format("")
+    action = {
+    }
+op GMI()
+    syntax = format("gmi")
+    image = format("")
+    action = {
+    }
+op HINT()
+    syntax = format("hint")
+    image = format("")
+    action = {
+    }
+op HLT()
+    syntax = format("hlt")
+    image = format("")
+    action = {
+    }
+op HVC()
+    syntax = format("hvc")
+    image = format("")
+    action = {
+    }
+op IC()
+    syntax = format("ic")
+    image = format("")
+    action = {
+    }
+op IRG()
+    syntax = format("irg")
+    image = format("")
+    action = {
+    }
+op ISB()
+    syntax = format("isb")
+    image = format("")
+    action = {
+    }
+op LD64B()
+    syntax = format("ld64b")
+    image = format("")
+    action = {
+    }
+op LDADDB()
+    syntax = format("ldaddb")
+    image = format("")
+    action = {
+    }
+op LDADDAB()
+    syntax = format("ldaddab")
+    image = format("")
+    action = {
+    }
+op LDADDALB()
+    syntax = format("ldaddalb")
+    image = format("")
+    action = {
+    }
+op LDADDLB()
+    syntax = format("ldaddlb")
+    image = format("")
+    action = {
+    }
+op LDADDH()
+    syntax = format("ldaddh")
+    image = format("")
+    action = {
+    }
+op LDADDAH()
+    syntax = format("ldaddah")
+    image = format("")
+    action = {
+    }
+op LDADDALH()
+    syntax = format("ldaddalh")
+    image = format("")
+    action = {
+    }
+op LDADDLH()
+    syntax = format("ldaddlh")
+    image = format("")
+    action = {
+    }
+op LDADD()
+    syntax = format("ldadd")
+    image = format("")
+    action = {
+    }
+op LDADDA()
+    syntax = format("ldadda")
+    image = format("")
+    action = {
+    }
+op LDADDAL()
+    syntax = format("ldaddal")
+    image = format("")
+    action = {
+    }
+op LDADDL()
+    syntax = format("ldaddl")
+    image = format("")
+    action = {
+    }
+op LDAPR()
+    syntax = format("ldapr")
+    image = format("")
+    action = {
+    }
+op LDAPRB()
+    syntax = format("ldaprb")
+    image = format("")
+    action = {
+    }
+op LDAPRH()
+    syntax = format("ldaprh")
+    image = format("")
+    action = {
+    }
+op LDAPUR()
+    syntax = format("ldapur")
+    image = format("")
+    action = {
+    }
+op LDAPURB()
+    syntax = format("ldapurb")
+    image = format("")
+    action = {
+    }
+op LDAPURH()
+    syntax = format("ldapurh")
+    image = format("")
+    action = {
+    }
+op LDAPURSB()
+    syntax = format("ldapursb")
+    image = format("")
+    action = {
+    }
+op LDAPURSH()
+    syntax = format("ldapursh")
+    image = format("")
+    action = {
+    }
+op LDAPURSW()
+    syntax = format("ldapursw")
+    image = format("")
+    action = {
+    }
+op LDAR()
+    syntax = format("ldar")
+    image = format("")
+    action = {
+    }
+op LDARB()
+    syntax = format("ldarb")
+    image = format("")
+    action = {
+    }
+op LDARH()
+    syntax = format("ldarh")
+    image = format("")
+    action = {
+    }
+op LDAXP()
+    syntax = format("ldaxp")
+    image = format("")
+    action = {
+    }
+op LDAXR()
+    syntax = format("ldaxr")
+    image = format("")
+    action = {
+    }
+op LDAXRB()
+    syntax = format("ldaxrb")
+    image = format("")
+    action = {
+    }
+op LDAXRH()
+    syntax = format("ldaxrh")
+    image = format("")
+    action = {
+    }
+op LDCLRB()
+    syntax = format("ldclrb")
+    image = format("")
+    action = {
+    }
+op LDCLRAB()
+    syntax = format("ldclrab")
+    image = format("")
+    action = {
+    }
+op LDCLRALB()
+    syntax = format("ldclralb")
+    image = format("")
+    action = {
+    }
+op LDCLRLB()
+    syntax = format("ldclrlb")
+    image = format("")
+    action = {
+    }
+op LDCLRH()
+    syntax = format("ldclrh")
+    image = format("")
+    action = {
+    }
+op LDCLRAH()
+    syntax = format("ldclrah")
+    image = format("")
+    action = {
+    }
+op LDCLRALH()
+    syntax = format("ldclralh")
+    image = format("")
+    action = {
+    }
+op LDCLRLH()
+    syntax = format("ldclrlh")
+    image = format("")
+    action = {
+    }
+op LDCLR()
+    syntax = format("ldclr")
+    image = format("")
+    action = {
+    }
+op LDCLRA()
+    syntax = format("ldclra")
+    image = format("")
+    action = {
+    }
+op LDCLRAL()
+    syntax = format("ldclral")
+    image = format("")
+    action = {
+    }
+op LDCLRL()
+    syntax = format("ldclrl")
+    image = format("")
+    action = {
+    }
+op LDEORB()
+    syntax = format("ldeorb")
+    image = format("")
+    action = {
+    }
+op LDEORAB()
+    syntax = format("ldeorab")
+    image = format("")
+    action = {
+    }
+op LDEORALB()
+    syntax = format("ldeoralb")
+    image = format("")
+    action = {
+    }
+op LDEORLB()
+    syntax = format("ldeorlb")
+    image = format("")
+    action = {
+    }
+op LDEORH()
+    syntax = format("ldeorh")
+    image = format("")
+    action = {
+    }
+op LDEORAH()
+    syntax = format("ldeorah")
+    image = format("")
+    action = {
+    }
+op LDEORALH()
+    syntax = format("ldeoralh")
+    image = format("")
+    action = {
+    }
+op LDEORLH()
+    syntax = format("ldeorlh")
+    image = format("")
+    action = {
+    }
+op LDEOR()
+    syntax = format("ldeor")
+    image = format("")
+    action = {
+    }
+op LDEORA()
+    syntax = format("ldeora")
+    image = format("")
+    action = {
+    }
+op LDEORAL()
+    syntax = format("ldeoral")
+    image = format("")
+    action = {
+    }
+op LDEORL()
+    syntax = format("ldeorl")
+    image = format("")
+    action = {
+    }
+op LDG()
+    syntax = format("ldg")
+    image = format("")
+    action = {
+    }
+op LDGM()
+    syntax = format("ldgm")
+    image = format("")
+    action = {
+    }
+op LDLARB()
+    syntax = format("ldlarb")
+    image = format("")
+    action = {
+    }
+op LDLARH()
+    syntax = format("ldlarh")
+    image = format("")
+    action = {
+    }
+op LDLAR()
+    syntax = format("ldlar")
+    image = format("")
+    action = {
+    }
+op LDNP()
+    syntax = format("ldnp")
+    image = format("")
+    action = {
+    }
+op LDP()
+    syntax = format("ldp")
+    image = format("")
+    action = {
+    }
+op LDPSW()
+    syntax = format("ldpsw")
+    image = format("")
+    action = {
+    }
+op LDR()
+    syntax = format("ldr")
+    image = format("")
+    action = {
+    }
+op LDR()
+    syntax = format("ldr")
+    image = format("")
+    action = {
+    }
+op LDR()
+    syntax = format("ldr")
+    image = format("")
+    action = {
+    }
+op LDRAA()
+    syntax = format("ldraa")
+    image = format("")
+    action = {
+    }
+op LDRAB()
+    syntax = format("ldrab")
+    image = format("")
+    action = {
+    }
+op LDRB()
+    syntax = format("ldrb")
+    image = format("")
+    action = {
+    }
+op LDRB()
+    syntax = format("ldrb")
+    image = format("")
+    action = {
+    }
+op LDRH()
+    syntax = format("ldrh")
+    image = format("")
+    action = {
+    }
+op LDRH()
+    syntax = format("ldrh")
+    image = format("")
+    action = {
+    }
+op LDRSB()
+    syntax = format("ldrsb")
+    image = format("")
+    action = {
+    }
+op LDRSB()
+    syntax = format("ldrsb")
+    image = format("")
+    action = {
+    }
+op LDRSH()
+    syntax = format("ldrsh")
+    image = format("")
+    action = {
+    }
+op LDRSH()
+    syntax = format("ldrsh")
+    image = format("")
+    action = {
+    }
+op LDRSW()
+    syntax = format("ldrsw")
+    image = format("")
+    action = {
+    }
+op LDRSW()
+    syntax = format("ldrsw")
+    image = format("")
+    action = {
+    }
+op LDRSW()
+    syntax = format("ldrsw")
+    image = format("")
+    action = {
+    }
+op LDSETB()
+    syntax = format("ldsetb")
+    image = format("")
+    action = {
+    }
+op LDSETAB()
+    syntax = format("ldsetab")
+    image = format("")
+    action = {
+    }
+op LDSETALB()
+    syntax = format("ldsetalb")
+    image = format("")
+    action = {
+    }
+op LDSETLB()
+    syntax = format("ldsetlb")
+    image = format("")
+    action = {
+    }
+op LDSETH()
+    syntax = format("ldseth")
+    image = format("")
+    action = {
+    }
+op LDSETAH()
+    syntax = format("ldsetah")
+    image = format("")
+    action = {
+    }
+op LDSETALH()
+    syntax = format("ldsetalh")
+    image = format("")
+    action = {
+    }
+op LDSETLH()
+    syntax = format("ldsetlh")
+    image = format("")
+    action = {
+    }
+op LDSET()
+    syntax = format("ldset")
+    image = format("")
+    action = {
+    }
+op LDSETA()
+    syntax = format("ldseta")
+    image = format("")
+    action = {
+    }
+op LDSETAL()
+    syntax = format("ldsetal")
+    image = format("")
+    action = {
+    }
+op LDSETL()
+    syntax = format("ldsetl")
+    image = format("")
+    action = {
+    }
+op LDSMAXB()
+    syntax = format("ldsmaxb")
+    image = format("")
+    action = {
+    }
+op LDSMAXAB()
+    syntax = format("ldsmaxab")
+    image = format("")
+    action = {
+    }
+op LDSMAXALB()
+    syntax = format("ldsmaxalb")
+    image = format("")
+    action = {
+    }
+op LDSMAXLB()
+    syntax = format("ldsmaxlb")
+    image = format("")
+    action = {
+    }
+op LDSMAXH()
+    syntax = format("ldsmaxh")
+    image = format("")
+    action = {
+    }
+op LDSMAXAH()
+    syntax = format("ldsmaxah")
+    image = format("")
+    action = {
+    }
+op LDSMAXALH()
+    syntax = format("ldsmaxalh")
+    image = format("")
+    action = {
+    }
+op LDSMAXLH()
+    syntax = format("ldsmaxlh")
+    image = format("")
+    action = {
+    }
+op LDSMAX()
+    syntax = format("ldsmax")
+    image = format("")
+    action = {
+    }
+op LDSMAXA()
+    syntax = format("ldsmaxa")
+    image = format("")
+    action = {
+    }
+op LDSMAXAL()
+    syntax = format("ldsmaxal")
+    image = format("")
+    action = {
+    }
+op LDSMAXL()
+    syntax = format("ldsmaxl")
+    image = format("")
+    action = {
+    }
+op LDSMINB()
+    syntax = format("ldsminb")
+    image = format("")
+    action = {
+    }
+op LDSMINAB()
+    syntax = format("ldsminab")
+    image = format("")
+    action = {
+    }
+op LDSMINALB()
+    syntax = format("ldsminalb")
+    image = format("")
+    action = {
+    }
+op LDSMINLB()
+    syntax = format("ldsminlb")
+    image = format("")
+    action = {
+    }
+op LDSMINH()
+    syntax = format("ldsminh")
+    image = format("")
+    action = {
+    }
+op LDSMINAH()
+    syntax = format("ldsminah")
+    image = format("")
+    action = {
+    }
+op LDSMINALH()
+    syntax = format("ldsminalh")
+    image = format("")
+    action = {
+    }
+op LDSMINLH()
+    syntax = format("ldsminlh")
+    image = format("")
+    action = {
+    }
+op LDSMIN()
+    syntax = format("ldsmin")
+    image = format("")
+    action = {
+    }
+op LDSMINA()
+    syntax = format("ldsmina")
+    image = format("")
+    action = {
+    }
+op LDSMINAL()
+    syntax = format("ldsminal")
+    image = format("")
+    action = {
+    }
+op LDSMINL()
+    syntax = format("ldsminl")
+    image = format("")
+    action = {
+    }
+op LDTR()
+    syntax = format("ldtr")
+    image = format("")
+    action = {
+    }
+op LDTRB()
+    syntax = format("ldtrb")
+    image = format("")
+    action = {
+    }
+op LDTRH()
+    syntax = format("ldtrh")
+    image = format("")
+    action = {
+    }
+op LDTRSB()
+    syntax = format("ldtrsb")
+    image = format("")
+    action = {
+    }
+op LDTRSH()
+    syntax = format("ldtrsh")
+    image = format("")
+    action = {
+    }
+op LDTRSW()
+    syntax = format("ldtrsw")
+    image = format("")
+    action = {
+    }
+op LDUMAXB()
+    syntax = format("ldumaxb")
+    image = format("")
+    action = {
+    }
+op LDUMAXAB()
+    syntax = format("ldumaxab")
+    image = format("")
+    action = {
+    }
+op LDUMAXALB()
+    syntax = format("ldumaxalb")
+    image = format("")
+    action = {
+    }
+op LDUMAXLB()
+    syntax = format("ldumaxlb")
+    image = format("")
+    action = {
+    }
+op LDUMAXH()
+    syntax = format("ldumaxh")
+    image = format("")
+    action = {
+    }
+op LDUMAXAH()
+    syntax = format("ldumaxah")
+    image = format("")
+    action = {
+    }
+op LDUMAXALH()
+    syntax = format("ldumaxalh")
+    image = format("")
+    action = {
+    }
+op LDUMAXLH()
+    syntax = format("ldumaxlh")
+    image = format("")
+    action = {
+    }
+op LDUMAX()
+    syntax = format("ldumax")
+    image = format("")
+    action = {
+    }
+op LDUMAXA()
+    syntax = format("ldumaxa")
+    image = format("")
+    action = {
+    }
+op LDUMAXAL()
+    syntax = format("ldumaxal")
+    image = format("")
+    action = {
+    }
+op LDUMAXL()
+    syntax = format("ldumaxl")
+    image = format("")
+    action = {
+    }
+op LDUMINB()
+    syntax = format("lduminb")
+    image = format("")
+    action = {
+    }
+op LDUMINAB()
+    syntax = format("lduminab")
+    image = format("")
+    action = {
+    }
+op LDUMINALB()
+    syntax = format("lduminalb")
+    image = format("")
+    action = {
+    }
+op LDUMINLB()
+    syntax = format("lduminlb")
+    image = format("")
+    action = {
+    }
+op LDUMINH()
+    syntax = format("lduminh")
+    image = format("")
+    action = {
+    }
+op LDUMINAH()
+    syntax = format("lduminah")
+    image = format("")
+    action = {
+    }
+op LDUMINALH()
+    syntax = format("lduminalh")
+    image = format("")
+    action = {
+    }
+op LDUMINLH()
+    syntax = format("lduminlh")
+    image = format("")
+    action = {
+    }
+op LDUMIN()
+    syntax = format("ldumin")
+    image = format("")
+    action = {
+    }
+op LDUMINA()
+    syntax = format("ldumina")
+    image = format("")
+    action = {
+    }
+op LDUMINAL()
+    syntax = format("lduminal")
+    image = format("")
+    action = {
+    }
+op LDUMINL()
+    syntax = format("lduminl")
+    image = format("")
+    action = {
+    }
+op LDUR()
+    syntax = format("ldur")
+    image = format("")
+    action = {
+    }
+op LDURB()
+    syntax = format("ldurb")
+    image = format("")
+    action = {
+    }
+op LDURH()
+    syntax = format("ldurh")
+    image = format("")
+    action = {
+    }
+op LDURSB()
+    syntax = format("ldursb")
+    image = format("")
+    action = {
+    }
+op LDURSH()
+    syntax = format("ldursh")
+    image = format("")
+    action = {
+    }
+op LDURSW()
+    syntax = format("ldursw")
+    image = format("")
+    action = {
+    }
+op LDXP()
+    syntax = format("ldxp")
+    image = format("")
+    action = {
+    }
+op LDXR()
+    syntax = format("ldxr")
+    image = format("")
+    action = {
+    }
+op LDXRB()
+    syntax = format("ldxrb")
+    image = format("")
+    action = {
+    }
+op LDXRH()
+    syntax = format("ldxrh")
+    image = format("")
+    action = {
+    }
+op LSL()
+    syntax = format("lsl")
+    image = format("")
+    action = {
+    }
+op LSL()
+    syntax = format("lsl")
+    image = format("")
+    action = {
+    }
+op LSLV()
+    syntax = format("lslv")
+    image = format("")
+    action = {
+    }
+op LSR()
+    syntax = format("lsr")
+    image = format("")
+    action = {
+    }
+op LSR()
+    syntax = format("lsr")
+    image = format("")
+    action = {
+    }
+op LSRV()
+    syntax = format("lsrv")
+    image = format("")
+    action = {
+    }
+op MADD()
+    syntax = format("madd")
+    image = format("")
+    action = {
+    }
+op MNEG()
+    syntax = format("mneg")
+    image = format("")
+    action = {
+    }
+op MOV()
+    syntax = format("mov")
+    image = format("")
+    action = {
+    }
+op MOV()
+    syntax = format("mov")
+    image = format("")
+    action = {
+    }
+op MOV()
+    syntax = format("mov")
+    image = format("")
+    action = {
+    }
+op MOV()
+    syntax = format("mov")
+    image = format("")
+    action = {
+    }
+op MOV()
+    syntax = format("mov")
+    image = format("")
+    action = {
+    }
+op MOVK()
+    syntax = format("movk")
+    image = format("")
+    action = {
+    }
+op MOVN()
+    syntax = format("movn")
+    image = format("")
+    action = {
+    }
+op MOVZ()
+    syntax = format("movz")
+    image = format("")
+    action = {
+    }
+op MRS()
+    syntax = format("mrs")
+    image = format("")
+    action = {
+    }
+op MSR()
+    syntax = format("msr")
+    image = format("")
+    action = {
+    }
+op MSR()
+    syntax = format("msr")
+    image = format("")
+    action = {
+    }
+op MSUB()
+    syntax = format("msub")
+    image = format("")
+    action = {
+    }
+op MUL()
+    syntax = format("mul")
+    image = format("")
+    action = {
+    }
+op MVN()
+    syntax = format("mvn")
+    image = format("")
+    action = {
+    }
+op NEG()
+    syntax = format("neg")
+    image = format("")
+    action = {
+    }
+op NEGS()
+    syntax = format("negs")
+    image = format("")
+    action = {
+    }
+op NGC()
+    syntax = format("ngc")
+    image = format("")
+    action = {
+    }
+op NGCS()
+    syntax = format("ngcs")
+    image = format("")
+    action = {
+    }
+op NOP()
+    syntax = format("nop")
+    image = format("")
+    action = {
+    }
+op ORN()
+    syntax = format("orn")
+    image = format("")
+    action = {
+    }
+op ORR()
+    syntax = format("orr")
+    image = format("")
+    action = {
+    }
+op ORR()
+    syntax = format("orr")
+    image = format("")
+    action = {
+    }
+op PACDA()
+    syntax = format("pacda")
+    image = format("")
+    action = {
+    }
+op PACDZA()
+    syntax = format("pacdza")
+    image = format("")
+    action = {
+    }
+op PACDB()
+    syntax = format("pacdb")
+    image = format("")
+    action = {
+    }
+op PACDZB()
+    syntax = format("pacdzb")
+    image = format("")
+    action = {
+    }
+op PACGA()
+    syntax = format("pacga")
+    image = format("")
+    action = {
+    }
+op PACIA()
+    syntax = format("pacia")
+    image = format("")
+    action = {
+    }
+op PACIA1716()
+    syntax = format("pacia1716")
+    image = format("")
+    action = {
+    }
+op PACIASP()
+    syntax = format("paciasp")
+    image = format("")
+    action = {
+    }
+op PACIAZ()
+    syntax = format("paciaz")
+    image = format("")
+    action = {
+    }
+op PACIZA()
+    syntax = format("paciza")
+    image = format("")
+    action = {
+    }
+op PACIB()
+    syntax = format("pacib")
+    image = format("")
+    action = {
+    }
+op PACIB1716()
+    syntax = format("pacib1716")
+    image = format("")
+    action = {
+    }
+op PACIBSP()
+    syntax = format("pacibsp")
+    image = format("")
+    action = {
+    }
+op PACIBZ()
+    syntax = format("pacibz")
+    image = format("")
+    action = {
+    }
+op PACIZB()
+    syntax = format("pacizb")
+    image = format("")
+    action = {
+    }
+op PRFM()
+    syntax = format("prfm")
+    image = format("")
+    action = {
+    }
+op PRFM()
+    syntax = format("prfm")
+    image = format("")
+    action = {
+    }
+op PRFM()
+    syntax = format("prfm")
+    image = format("")
+    action = {
+    }
+op PRFUM()
+    syntax = format("prfum")
+    image = format("")
+    action = {
+    }
+op PSB()
+    syntax = format("psb")
+    image = format("")
+    action = {
+    }
+op PSSBB()
+    syntax = format("pssbb")
+    image = format("")
+    action = {
+    }
+op RBIT()
+    syntax = format("rbit")
+    image = format("")
+    action = {
+    }
+op RET()
+    syntax = format("ret")
+    image = format("")
+    action = {
+    }
+op RETAA()
+    syntax = format("retaa")
+    image = format("")
+    action = {
+    }
+op RETAB()
+    syntax = format("retab")
+    image = format("")
+    action = {
+    }
+op REV()
+    syntax = format("rev")
+    image = format("")
+    action = {
+    }
+op REV16()
+    syntax = format("rev16")
+    image = format("")
+    action = {
+    }
+op REV32()
+    syntax = format("rev32")
+    image = format("")
+    action = {
+    }
+op REV64()
+    syntax = format("rev64")
+    image = format("")
+    action = {
+    }
+op RMIF()
+    syntax = format("rmif")
+    image = format("")
+    action = {
+    }
+op ROR()
+    syntax = format("ror")
+    image = format("")
+    action = {
+    }
+op ROR()
+    syntax = format("ror")
+    image = format("")
+    action = {
+    }
+op RORV()
+    syntax = format("rorv")
+    image = format("")
+    action = {
+    }
+op SB()
+    syntax = format("sb")
+    image = format("")
+    action = {
+    }
+op SBC()
+    syntax = format("sbc")
+    image = format("")
+    action = {
+    }
+op SBCS()
+    syntax = format("sbcs")
+    image = format("")
+    action = {
+    }
+op SBFIZ()
+    syntax = format("sbfiz")
+    image = format("")
+    action = {
+    }
+op SBFX()
+    syntax = format("sbfx")
+    image = format("")
+    action = {
+    }
+op SDIV()
+    syntax = format("sdiv")
+    image = format("")
+    action = {
+    }
+op SETF8()
+    syntax = format("setf8")
+    image = format("")
+    action = {
+    }
+op SETF16()
+    syntax = format("setf16")
+    image = format("")
+    action = {
+    }
+op SETGP()
+    syntax = format("setgp")
+    image = format("")
+    action = {
+    }
+op SETGM()
+    syntax = format("setgm")
+    image = format("")
+    action = {
+    }
+op SETGE()
+    syntax = format("setge")
+    image = format("")
+    action = {
+    }
+op SETGPN()
+    syntax = format("setgpn")
+    image = format("")
+    action = {
+    }
+op SETGMN()
+    syntax = format("setgmn")
+    image = format("")
+    action = {
+    }
+op SETGEN()
+    syntax = format("setgen")
+    image = format("")
+    action = {
+    }
+op SETGPT()
+    syntax = format("setgpt")
+    image = format("")
+    action = {
+    }
+op SETGMT()
+    syntax = format("setgmt")
+    image = format("")
+    action = {
+    }
+op SETGET()
+    syntax = format("setget")
+    image = format("")
+    action = {
+    }
+op SETGPTN()
+    syntax = format("setgptn")
+    image = format("")
+    action = {
+    }
+op SETGMTN()
+    syntax = format("setgmtn")
+    image = format("")
+    action = {
+    }
+op SETGETN()
+    syntax = format("setgetn")
+    image = format("")
+    action = {
+    }
+op SETP()
+    syntax = format("setp")
+    image = format("")
+    action = {
+    }
+op SETM()
+    syntax = format("setm")
+    image = format("")
+    action = {
+    }
+op SETE()
+    syntax = format("sete")
+    image = format("")
+    action = {
+    }
+op SETPN()
+    syntax = format("setpn")
+    image = format("")
+    action = {
+    }
+op SETMN()
+    syntax = format("setmn")
+    image = format("")
+    action = {
+    }
+op SETEN()
+    syntax = format("seten")
+    image = format("")
+    action = {
+    }
+op SETPT()
+    syntax = format("setpt")
+    image = format("")
+    action = {
+    }
+op SETMT()
+    syntax = format("setmt")
+    image = format("")
+    action = {
+    }
+op SETET()
+    syntax = format("setet")
+    image = format("")
+    action = {
+    }
+op SETPTN()
+    syntax = format("setptn")
+    image = format("")
+    action = {
+    }
+op SETMTN()
+    syntax = format("setmtn")
+    image = format("")
+    action = {
+    }
+op SETETN()
+    syntax = format("setetn")
+    image = format("")
+    action = {
+    }
+op SEV()
+    syntax = format("sev")
+    image = format("")
+    action = {
+    }
+op SEVL()
+    syntax = format("sevl")
+    image = format("")
+    action = {
+    }
+op SMADDL()
+    syntax = format("smaddl")
+    image = format("")
+    action = {
+    }
+op SMC()
+    syntax = format("smc")
+    image = format("")
+    action = {
+    }
+op SMNEGL()
+    syntax = format("smnegl")
+    image = format("")
+    action = {
+    }
+op SMSTART()
+    syntax = format("smstart")
+    image = format("")
+    action = {
+    }
+op SMSTOP()
+    syntax = format("smstop")
+    image = format("")
+    action = {
+    }
+op SMSUBL()
+    syntax = format("smsubl")
+    image = format("")
+    action = {
+    }
+op SMULH()
+    syntax = format("smulh")
+    image = format("")
+    action = {
+    }
+op SMULL()
+    syntax = format("smull")
+    image = format("")
+    action = {
+    }
+op SSBB()
+    syntax = format("ssbb")
+    image = format("")
+    action = {
+    }
+op ST2G()
+    syntax = format("st2g")
+    image = format("")
+    action = {
+    }
+op ST64B()
+    syntax = format("st64b")
+    image = format("")
+    action = {
+    }
+op ST64BV()
+    syntax = format("st64bv")
+    image = format("")
+    action = {
+    }
+op ST64BV0()
+    syntax = format("st64bv0")
+    image = format("")
+    action = {
+    }
+op STADDB()
+    syntax = format("staddb")
+    image = format("")
+    action = {
+    }
+op STADDLB()
+    syntax = format("staddlb")
+    image = format("")
+    action = {
+    }
+op STADDH()
+    syntax = format("staddh")
+    image = format("")
+    action = {
+    }
+op STADDLH()
+    syntax = format("staddlh")
+    image = format("")
+    action = {
+    }
+op STADD()
+    syntax = format("stadd")
+    image = format("")
+    action = {
+    }
+op STADDL()
+    syntax = format("staddl")
+    image = format("")
+    action = {
+    }
+op STCLRB()
+    syntax = format("stclrb")
+    image = format("")
+    action = {
+    }
+op STCLRLB()
+    syntax = format("stclrlb")
+    image = format("")
+    action = {
+    }
+op STCLRH()
+    syntax = format("stclrh")
+    image = format("")
+    action = {
+    }
+op STCLRLH()
+    syntax = format("stclrlh")
+    image = format("")
+    action = {
+    }
+op STCLR()
+    syntax = format("stclr")
+    image = format("")
+    action = {
+    }
+op STCLRL()
+    syntax = format("stclrl")
+    image = format("")
+    action = {
+    }
+op STEORB()
+    syntax = format("steorb")
+    image = format("")
+    action = {
+    }
+op STEORLB()
+    syntax = format("steorlb")
+    image = format("")
+    action = {
+    }
+op STEORH()
+    syntax = format("steorh")
+    image = format("")
+    action = {
+    }
+op STEORLH()
+    syntax = format("steorlh")
+    image = format("")
+    action = {
+    }
+op STEOR()
+    syntax = format("steor")
+    image = format("")
+    action = {
+    }
+op STEORL()
+    syntax = format("steorl")
+    image = format("")
+    action = {
+    }
+op STG()
+    syntax = format("stg")
+    image = format("")
+    action = {
+    }
+op STGM()
+    syntax = format("stgm")
+    image = format("")
+    action = {
+    }
+op STGP()
+    syntax = format("stgp")
+    image = format("")
+    action = {
+    }
+op STLLRB()
+    syntax = format("stllrb")
+    image = format("")
+    action = {
+    }
+op STLLRH()
+    syntax = format("stllrh")
+    image = format("")
+    action = {
+    }
+op STLLR()
+    syntax = format("stllr")
+    image = format("")
+    action = {
+    }
+op STLR()
+    syntax = format("stlr")
+    image = format("")
+    action = {
+    }
+op STLRB()
+    syntax = format("stlrb")
+    image = format("")
+    action = {
+    }
+op STLRH()
+    syntax = format("stlrh")
+    image = format("")
+    action = {
+    }
+op STLUR()
+    syntax = format("stlur")
+    image = format("")
+    action = {
+    }
+op STLURB()
+    syntax = format("stlurb")
+    image = format("")
+    action = {
+    }
+op STLURH()
+    syntax = format("stlurh")
+    image = format("")
+    action = {
+    }
+op STLXP()
+    syntax = format("stlxp")
+    image = format("")
+    action = {
+    }
+op STLXR()
+    syntax = format("stlxr")
+    image = format("")
+    action = {
+    }
+op STLXRB()
+    syntax = format("stlxrb")
+    image = format("")
+    action = {
+    }
+op STLXRH()
+    syntax = format("stlxrh")
+    image = format("")
+    action = {
+    }
+op STNP()
+    syntax = format("stnp")
+    image = format("")
+    action = {
+    }
+op STP()
+    syntax = format("stp")
+    image = format("")
+    action = {
+    }
+op STR()
+    syntax = format("str")
+    image = format("")
+    action = {
+    }
+op STR()
+    syntax = format("str")
+    image = format("")
+    action = {
+    }
+op STRB()
+    syntax = format("strb")
+    image = format("")
+    action = {
+    }
+op STRB()
+    syntax = format("strb")
+    image = format("")
+    action = {
+    }
+op STRH()
+    syntax = format("strh")
+    image = format("")
+    action = {
+    }
+op STRH()
+    syntax = format("strh")
+    image = format("")
+    action = {
+    }
+op STSETB()
+    syntax = format("stsetb")
+    image = format("")
+    action = {
+    }
+op STSETLB()
+    syntax = format("stsetlb")
+    image = format("")
+    action = {
+    }
+op STSETH()
+    syntax = format("stseth")
+    image = format("")
+    action = {
+    }
+op STSETLH()
+    syntax = format("stsetlh")
+    image = format("")
+    action = {
+    }
+op STSET()
+    syntax = format("stset")
+    image = format("")
+    action = {
+    }
+op STSETL()
+    syntax = format("stsetl")
+    image = format("")
+    action = {
+    }
+op STSMAXB()
+    syntax = format("stsmaxb")
+    image = format("")
+    action = {
+    }
+op STSMAXLB()
+    syntax = format("stsmaxlb")
+    image = format("")
+    action = {
+    }
+op STSMAXH()
+    syntax = format("stsmaxh")
+    image = format("")
+    action = {
+    }
+op STSMAXLH()
+    syntax = format("stsmaxlh")
+    image = format("")
+    action = {
+    }
+op STSMAX()
+    syntax = format("stsmax")
+    image = format("")
+    action = {
+    }
+op STSMAXL()
+    syntax = format("stsmaxl")
+    image = format("")
+    action = {
+    }
+op STSMINB()
+    syntax = format("stsminb")
+    image = format("")
+    action = {
+    }
+op STSMINLB()
+    syntax = format("stsminlb")
+    image = format("")
+    action = {
+    }
+op STSMINH()
+    syntax = format("stsminh")
+    image = format("")
+    action = {
+    }
+op STSMINLH()
+    syntax = format("stsminlh")
+    image = format("")
+    action = {
+    }
+op STSMIN()
+    syntax = format("stsmin")
+    image = format("")
+    action = {
+    }
+op STSMINL()
+    syntax = format("stsminl")
+    image = format("")
+    action = {
+    }
+op STTR()
+    syntax = format("sttr")
+    image = format("")
+    action = {
+    }
+op STTRB()
+    syntax = format("sttrb")
+    image = format("")
+    action = {
+    }
+op STTRH()
+    syntax = format("sttrh")
+    image = format("")
+    action = {
+    }
+op STUMAXB()
+    syntax = format("stumaxb")
+    image = format("")
+    action = {
+    }
+op STUMAXLB()
+    syntax = format("stumaxlb")
+    image = format("")
+    action = {
+    }
+op STUMAXH()
+    syntax = format("stumaxh")
+    image = format("")
+    action = {
+    }
+op STUMAXLH()
+    syntax = format("stumaxlh")
+    image = format("")
+    action = {
+    }
+op STUMAX()
+    syntax = format("stumax")
+    image = format("")
+    action = {
+    }
+op STUMAXL()
+    syntax = format("stumaxl")
+    image = format("")
+    action = {
+    }
+op STUMINB()
+    syntax = format("stuminb")
+    image = format("")
+    action = {
+    }
+op STUMINLB()
+    syntax = format("stuminlb")
+    image = format("")
+    action = {
+    }
+op STUMINH()
+    syntax = format("stuminh")
+    image = format("")
+    action = {
+    }
+op STUMINLH()
+    syntax = format("stuminlh")
+    image = format("")
+    action = {
+    }
+op STUMIN()
+    syntax = format("stumin")
+    image = format("")
+    action = {
+    }
+op STUMINL()
+    syntax = format("stuminl")
+    image = format("")
+    action = {
+    }
+op STUR()
+    syntax = format("stur")
+    image = format("")
+    action = {
+    }
+op STURB()
+    syntax = format("sturb")
+    image = format("")
+    action = {
+    }
+op STURH()
+    syntax = format("sturh")
+    image = format("")
+    action = {
+    }
+op STXP()
+    syntax = format("stxp")
+    image = format("")
+    action = {
+    }
+op STXR()
+    syntax = format("stxr")
+    image = format("")
+    action = {
+    }
+op STXRB()
+    syntax = format("stxrb")
+    image = format("")
+    action = {
+    }
+op STXRH()
+    syntax = format("stxrh")
+    image = format("")
+    action = {
+    }
+op STZ2G()
+    syntax = format("stz2g")
+    image = format("")
+    action = {
+    }
+op STZG()
+    syntax = format("stzg")
+    image = format("")
+    action = {
+    }
+op STZGM()
+    syntax = format("stzgm")
+    image = format("")
+    action = {
+    }
+op SUB()
+    syntax = format("sub")
+    image = format("")
+    action = {
+    }
+op SUB()
+    syntax = format("sub")
+    image = format("")
+    action = {
+    }
+op SUB()
+    syntax = format("sub")
+    image = format("")
+    action = {
+    }
+op SUBG()
+    syntax = format("subg")
+    image = format("")
+    action = {
+    }
+op SUBP()
+    syntax = format("subp")
+    image = format("")
+    action = {
+    }
+op SUBPS()
+    syntax = format("subps")
+    image = format("")
+    action = {
+    }
+op SUBS()
+    syntax = format("subs")
+    image = format("")
+    action = {
+    }
+op SUBS()
+    syntax = format("subs")
+    image = format("")
+    action = {
+    }
+op SUBS()
+    syntax = format("subs")
+    image = format("")
+    action = {
+    }
+op SVC()
+    syntax = format("svc")
+    image = format("")
+    action = {
+    }
+op SWPB()
+    syntax = format("swpb")
+    image = format("")
+    action = {
+    }
+op SWPAB()
+    syntax = format("swpab")
+    image = format("")
+    action = {
+    }
+op SWPALB()
+    syntax = format("swpalb")
+    image = format("")
+    action = {
+    }
+op SWPLB()
+    syntax = format("swplb")
+    image = format("")
+    action = {
+    }
+op SWPH()
+    syntax = format("swph")
+    image = format("")
+    action = {
+    }
+op SWPAH()
+    syntax = format("swpah")
+    image = format("")
+    action = {
+    }
+op SWPALH()
+    syntax = format("swpalh")
+    image = format("")
+    action = {
+    }
+op SWPLH()
+    syntax = format("swplh")
+    image = format("")
+    action = {
+    }
+op SWP()
+    syntax = format("swp")
+    image = format("")
+    action = {
+    }
+op SWPA()
+    syntax = format("swpa")
+    image = format("")
+    action = {
+    }
+op SWPAL()
+    syntax = format("swpal")
+    image = format("")
+    action = {
+    }
+op SWPL()
+    syntax = format("swpl")
+    image = format("")
+    action = {
+    }
+op SXTB()
+    syntax = format("sxtb")
+    image = format("")
+    action = {
+    }
+op SXTH()
+    syntax = format("sxth")
+    image = format("")
+    action = {
+    }
+op SXTW()
+    syntax = format("sxtw")
+    image = format("")
+    action = {
+    }
+op SYS()
+    syntax = format("sys")
+    image = format("")
+    action = {
+    }
+op SYSL()
+    syntax = format("sysl")
+    image = format("")
+    action = {
+    }
+op TBNZ()
+    syntax = format("tbnz")
+    image = format("")
+    action = {
+    }
+op TBZ()
+    syntax = format("tbz")
+    image = format("")
+    action = {
+    }
+op TCANCEL()
+    syntax = format("tcancel")
+    image = format("")
+    action = {
+    }
+op TCOMMIT()
+    syntax = format("tcommit")
+    image = format("")
+    action = {
+    }
+op TLBI()
+    syntax = format("tlbi")
+    image = format("")
+    action = {
+    }
+op TSTART()
+    syntax = format("tstart")
+    image = format("")
+    action = {
+    }
+op TTEST()
+    syntax = format("ttest")
+    image = format("")
+    action = {
+    }
+op TSB()
+    syntax = format("tsb")
+    image = format("")
+    action = {
+    }
+op TST()
+    syntax = format("tst")
+    image = format("")
+    action = {
+    }
+op TST()
+    syntax = format("tst")
+    image = format("")
+    action = {
+    }
+op UBFIZ()
+    syntax = format("ubfiz")
+    image = format("")
+    action = {
+    }
+op UBFM()
+    syntax = format("ubfm")
+    image = format("")
+    action = {
+    }
+op UBFX()
+    syntax = format("ubfx")
+    image = format("")
+    action = {
+    }
+op UDF()
+    syntax = format("udf")
+    image = format("")
+    action = {
+    }
+op UDIV()
+    syntax = format("udiv")
+    image = format("")
+    action = {
+    }
+op UMADDL()
+    syntax = format("umaddl")
+    image = format("")
+    action = {
+    }
+op UMNEGL()
+    syntax = format("umnegl")
+    image = format("")
+    action = {
+    }
+op UMSUBL()
+    syntax = format("umsubl")
+    image = format("")
+    action = {
+    }
+op UMULH()
+    syntax = format("umulh")
+    image = format("")
+    action = {
+    }
+op UMULL()
+    syntax = format("umull")
+    image = format("")
+    action = {
+    }
+op UXTB()
+    syntax = format("uxtb")
+    image = format("")
+    action = {
+    }
+op UXTH()
+    syntax = format("uxth")
+    image = format("")
+    action = {
+    }
+op WFE()
+    syntax = format("wfe")
+    image = format("")
+    action = {
+    }
+op WFET()
+    syntax = format("wfet")
+    image = format("")
+    action = {
+    }
+op WFI()
+    syntax = format("wfi")
+    image = format("")
+    action = {
+    }
+op WFIT()
+    syntax = format("wfit")
+    image = format("")
+    action = {
+    }
+op XAFLAG()
+    syntax = format("xaflag")
+    image = format("")
+    action = {
+    }
+op XPACD()
+    syntax = format("xpacd")
+    image = format("")
+    action = {
+    }
+op XPACI()
+    syntax = format("xpaci")
+    image = format("")
+    action = {
+    }
+op XPACLRI()
+    syntax = format("xpaclri")
+    image = format("")
+    action = {
+    }
+op YIELD()
+    syntax = format("yield")
+    image = format("")
+    action = {
+    }

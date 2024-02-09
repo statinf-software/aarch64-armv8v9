@@ -21,6 +21,8 @@ let gliss_isize = "32"
 
 include "types.nmp"
 include "state.nmp"
+include "macros.nmp"
+include "tempVar.nmp"
 
 // **** instructions sets ******
 op instruction = AARCH64
@@ -37,10 +39,14 @@ op AARCH64(x : AARCH64_instr)
 	instruction_set_name = "AARCH64"
           
 op AARCH64_instr =
-	branch 
+	branch | arithmetic | logic | system | floating | memory
 
 
 
 include "condition.nmp"
 include "control.nmp"
-
+include "arithmetic.nmp"
+include "logic.nmp"
+include "system.nmp"
+include "float.nmp"
+include "memory.nmp"

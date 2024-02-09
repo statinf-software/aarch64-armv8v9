@@ -44,23 +44,640 @@ disasm/aarch64-disasm <elf64file>
 ## Implementation Status
 
 Notation:
-* [ ] -- Not implemented
+* [] -- Not implemented
 * [partial] -- Partially implemented (not all masks done)
 * [x] -- Disasembler implemented (no actions)
 
-Instructions used in LTS code:
+Instructions used in ARM code:
 
-- [x] B
-- [x] B.cond
-- [x] BC.cond
+- [partial] ADC
+- [partial] ADCS
+- [partial] ADD (extended register)
+- [partial] ADD (immediate)
+- [partial] ADD (shifted register)
+- [partial] ADDG
+- [partial] ADDS (extended register)
+- [partial] ADDS (immediate)
+- [partial] ADDS (shifted register)
+- [x] ADR
+- [x] ADRP
+- [partial-Csyntax] AND (immediate)
+- [partial-Csyntax] AND (shifted register)
+- [partial-Csyntax] ANDS (immediate)
+- [partial-Csyntax] ANDS (shifted register)
+- [partial] ASR (register)
+- [alias] ASR (immediate)
+- [partial] ASRV
+- [partial] AT
+- [partial] AUTDA
+- [partial] AUTDZA
+- [partial] AUTDB
+- [partial] AUTDZB
+- [partial] AUTIA
+- [partial] AUTIA1716
+- [partial] AUTIASP
+- [partial] AUTIAZ
+- [partial] AUTIZA
+- [partial] AUTIB
+- [partial] AUTIB1716
+- [partial] AUTIBSP
+- [partial] AUTIBZ
+- [partial] AUTIZB
+- [partial] AXFLAG
+- [partial] BFM
+- [partial] BIC
+- [partial] BICS
 - [x] BL
 - [partial] BLR
 - [partial] BLRAA
 - [partial] BLRAAZ
 - [partial] BLRAB
-- [partial] BLRAAZ
+- [partial] BLRABZ
 - [partial] BR
 - [partial] BRAA
 - [partial] BRAAZ
 - [partial] BRAB
 - [partial] BRABZ
+- [alias] BRB
+- [partial] BRK
+- [partial] BTI
+- [partial] CASB
+- [partial] CASAB
+- [partial] CASALB
+- [partial] CASLB
+- [partial] CASH
+- [partial] CASAH
+- [partial] CASALH
+- [partial] CASLH
+- [partial-Csyntax] CASP (Rs+1)
+- [partial] CASPA
+- [partial] CASPAL
+- [partial] CASPL
+- [partial] CAS
+- [partial] CASA
+- [partial] CASAL
+- [partial] CASL
+- [partial] CBNZ
+- [partial] CBZ
+- [partial] CCMN (immediate)
+- [partial] CCMN (register)
+- [partial] CCMP (immediate)
+- [partial] CCMP (register)
+- [partial] CFINV
+- [alias] CFP
+- [alias] CINC
+- [alias] CINV
+- [partial] CLREX
+- [partial] CLS
+- [partial] CLZ
+- [alias] CMN (extended register)
+- [alias] CMN (immediate)
+- [alias] CMN (shifted register)
+- [alias] CMP (extended register)
+- [alias] CMP (immediate)
+- [alias] CMP (shifted register)
+- [alias] CMPP
+- [alias] CNEG
+- [alias] CPP
+- [partial] CPYFP
+- [partial] CPYFM
+- [partial] CPYFE
+- [partial] CPYFPN
+- [partial] CPYFMN
+- [partial] CPYFEN
+- [partial] CPYFPRN
+- [partial] CPYFMRN
+- [partial] CPYFERN
+- [partial] CPYFPRT
+- [partial] CPYFMRT
+- [partial] CPYFERT
+- [partial] CPYFPRTN
+- [partial] CPYFMRTN
+- [partial] CPYFERTN
+- [partial] CPYFPRTRN
+- [partial] CPYFMRTRN
+- [partial] CPYFERTRN
+- [partial] CPYFPRTWN
+- [partial] CPYFMRTWN
+- [partial] CPYFERTWN
+- [partial] CPYFPT
+- [partial] CPYFMT
+- [partial] CPYFET
+- [partial] CPYFPTN
+- [partial] CPYFMTN
+- [partial] CPYFETN
+- [partial] CPYFPTRN
+- [partial] CPYFMTRN
+- [partial] CPYFETRN
+- [partial] CPYFPTWN
+- [partial] CPYFMTWN
+- [partial] CPYFETWN
+- [partial] CPYFPWN
+- [partial] CPYFMWN
+- [partial] CPYFEWN
+- [partial] CPYFPWT
+- [partial] CPYFMWT
+- [partial] CPYFEWT
+- [partial] CPYFPWTN
+- [partial] CPYFMWTN
+- [partial] CPYFEWTN
+- [partial] CPYFPWTRN
+- [partial] CPYFMWTRN
+- [partial] CPYFEWTRN
+- [partial] CPYFPWTWN
+- [partial] CPYFMWTWN
+- [partial] CPYFEWTWN
+- [partial] CPYP
+- [partial] CPYM
+- [partial] CPYE
+- [partial] CPYPN
+- [partial] CPYMN
+- [partial] CPYEN
+- [partial] CPYPRN
+- [partial] CPYMRN
+- [partial] CPYERN
+- [partial] CPYPRT
+- [partial] CPYMRT
+- [partial] CPYERT
+- [partial] CPYPRTN
+- [partial] CPYMRTN
+- [partial] CPYERTN
+- [partial] CPYPRTRN
+- [partial] CPYMRTRN
+- [partial] CPYERTRN
+- [partial] CPYPRTWN
+- [partial] CPYMRTWN
+- [partial] CPYERTWN
+- [partial] CPYPT
+- [partial] CPYMT
+- [partial] CPYET
+- [partial] CPYPTN
+- [partial] CPYMTN
+- [partial] CPYETN
+- [partial] CPYPTRN
+- [partial] CPYMTRN
+- [partial] CPYETRN
+- [partial] CPYPTWN
+- [partial] CPYMTWN
+- [partial] CPYETWN
+- [partial] CPYPWN
+- [partial] CPYMWN
+- [partial] CPYEWN
+- [partial] CPYPWT
+- [partial] CPYMWT
+- [partial] CPYEWT
+- [partial] CPYPWTN
+- [partial] CPYMWTN
+- [partial] CPYEWTN
+- [partial] CPYPWTRN
+- [partial] CPYMWTRN
+- [partial] CPYEWTRN
+- [partial] CPYPWTWN
+- [partial] CPYMWTWN
+- [partial] CPYEWTWN
+- [partial] CRC32B
+- [partial] CRC32H
+- [partial] CRC32W
+- [partial] CRC32X
+- [partial] CRC32CB
+- [partial] CRC32CH
+- [partial] CRC32CW
+- [partial] CRC32CX
+- [partial] CSDB
+- [partial] CSEL
+- [alias] CSET
+- [alias] CSETM
+- [partial] CSINC
+- [partial] CSINV
+- [partial] CSNEG
+- [] DC
+- [] DCPS1
+- [] DCPS2
+- [] DCPS3
+- [] DGH
+- [] DMB
+- [] DRPS
+- [] DSB
+- [] DVP
+- [] EON (shifted register)
+- [] EOR (immediate)
+- [] EOR (shifted register)
+- [] ERET
+- [] ERETAA
+- [] ERETAB
+- [] ESB
+- [] EXTR
+- [] GMI
+- [] HINT
+- [] HLT
+- [] HVC
+- [] IC
+- [] IRG
+- [] ISB
+- [] LD64B
+- [] LDADDB
+- [] LDADDAB
+- [] LDADDALB
+- [] LDADDLB
+- [] LDADDH
+- [] LDADDAH
+- [] LDADDALH
+- [] LDADDLH
+- [] LDADD
+- [] LDADDA
+- [] LDADDAL
+- [] LDADDL
+- [] LDAPR
+- [] LDAPRB
+- [] LDAPRH
+- [] LDAPUR
+- [] LDAPURB
+- [] LDAPURH
+- [] LDAPURSB
+- [] LDAPURSH
+- [] LDAPURSW
+- [] LDAR
+- [] LDARB
+- [] LDARH
+- [] LDAXP
+- [] LDAXR
+- [] LDAXRB
+- [] LDAXRH
+- [] LDCLRB
+- [] LDCLRAB
+- [] LDCLRALB
+- [] LDCLRLB
+- [] LDCLRH
+- [] LDCLRAH
+- [] LDCLRALH
+- [] LDCLRLH
+- [] LDCLR
+- [] LDCLRA
+- [] LDCLRAL
+- [] LDCLRL
+- [] LDEORB
+- [] LDEORAB
+- [] LDEORALB
+- [] LDEORLB
+- [] LDEORH
+- [] LDEORAH
+- [] LDEORALH
+- [] LDEORLH
+- [] LDEOR
+- [] LDEORA
+- [] LDEORAL
+- [] LDEORL
+- [] LDG
+- [] LDGM
+- [] LDLARB
+- [] LDLARH
+- [] LDLAR
+- [] LDNP
+- [] LDP
+- [] LDPSW
+- [] LDR (immediate)
+- [] LDR (literal)
+- [] LDR (register)
+- [] LDRAA
+- [] LDRAB
+- [] LDRB (immediate)
+- [] LDRB (register)
+- [] LDRH (immediate)
+- [] LDRH (register)
+- [] LDRSB (immediate)
+- [] LDRSB (register)
+- [] LDRSH (immediate)
+- [] LDRSH (register)
+- [] LDRSW (immediate)
+- [] LDRSW (literal)
+- [] LDRSW (register)
+- [] LDSETB
+- [] LDSETAB
+- [] LDSETALB
+- [] LDSETLB
+- [] LDSETH
+- [] LDSETAH
+- [] LDSETALH
+- [] LDSETLH
+- [] LDSET
+- [] LDSETA
+- [] LDSETAL
+- [] LDSETL
+- [] LDSMAXB
+- [] LDSMAXAB
+- [] LDSMAXALB
+- [] LDSMAXLB
+- [] LDSMAXH
+- [] LDSMAXAH
+- [] LDSMAXALH
+- [] LDSMAXLH
+- [] LDSMAX
+- [] LDSMAXA
+- [] LDSMAXAL
+- [] LDSMAXL
+- [] LDSMINB
+- [] LDSMINAB
+- [] LDSMINALB
+- [] LDSMINLB
+- [] LDSMINH
+- [] LDSMINAH
+- [] LDSMINALH
+- [] LDSMINLH
+- [] LDSMIN
+- [] LDSMINA
+- [] LDSMINAL
+- [] LDSMINL
+- [] LDTR
+- [] LDTRB
+- [] LDTRH
+- [] LDTRSB
+- [] LDTRSH
+- [] LDTRSW
+- [] LDUMAXB
+- [] LDUMAXAB
+- [] LDUMAXALB
+- [] LDUMAXLB
+- [] LDUMAXH
+- [] LDUMAXAH
+- [] LDUMAXALH
+- [] LDUMAXLH
+- [] LDUMAX
+- [] LDUMAXA
+- [] LDUMAXAL
+- [] LDUMAXL
+- [] LDUMINB
+- [] LDUMINAB
+- [] LDUMINALB
+- [] LDUMINLB
+- [] LDUMINH
+- [] LDUMINAH
+- [] LDUMINALH
+- [] LDUMINLH
+- [] LDUMIN
+- [] LDUMINA
+- [] LDUMINAL
+- [] LDUMINL
+- [] LDUR
+- [] LDURB
+- [] LDURH
+- [] LDURSB
+- [] LDURSH
+- [] LDURSW
+- [] LDXP
+- [] LDXR
+- [] LDXRB
+- [] LDXRH
+- [] LSL (register)
+- [] LSL (immediate)
+- [] LSLV
+- [] LSR (register)
+- [] LSR (immediate)
+- [] LSRV
+- [] MADD
+- [] MNEG
+- [] MOV (to/from SP)
+- [] MOV (inverted wide immediate)
+- [] MOV (wide immediate)
+- [] MOV (bitmask immediate)
+- [] MOV (register)
+- [] MOVK
+- [] MOVN
+- [] MOVZ
+- [] MRS
+- [] MSR (immediate)
+- [] MSR (register)
+- [] MSUB
+- [] MUL
+- [] MVN
+- [] NEG (shifted register)
+- [] NEGS
+- [] NGC
+- [] NGCS
+- [] NOP
+- [] ORN (shifted register)
+- [] ORR (immediate)
+- [] ORR (shifted register)
+- [] PACDA
+- [] PACDZA
+- [] PACDB
+- [] PACDZB
+- [] PACGA
+- [] PACIA
+- [] PACIA1716
+- [] PACIASP
+- [] PACIAZ
+- [] PACIZA
+- [] PACIB
+- [] PACIB1716
+- [] PACIBSP
+- [] PACIBZ
+- [] PACIZB
+- [] PRFM (immediate)
+- [] PRFM (literal)
+- [] PRFM (register)
+- [] PRFUM
+- [] PSB CSYNC
+- [] PSSBB
+- [] RBIT
+- [] RET
+- [] RETAA
+- [] RETAB
+- [] REV
+- [] REV16
+- [] REV32
+- [] REV64
+- [] RMIF
+- [] ROR (immediate)
+- [] ROR (register)
+- [] RORV
+- [] SB
+- [] SBC
+- [] SBCS
+- [] SBFIZ
+- [partial] SBFM
+- [] SBFX
+- [] SDIV
+- [] SETF8
+- [] SETF16
+- [] SETGP
+- [] SETGM
+- [] SETGE
+- [] SETGPN
+- [] SETGMN
+- [] SETGEN
+- [] SETGPT
+- [] SETGMT
+- [] SETGET
+- [] SETGPTN
+- [] SETGMTN
+- [] SETGETN
+- [] SETP
+- [] SETM
+- [] SETE
+- [] SETPN
+- [] SETMN
+- [] SETEN
+- [] SETPT
+- [] SETMT
+- [] SETET
+- [] SETPTN
+- [] SETMTN
+- [] SETETN
+- [] SEV
+- [] SEVL
+- [] SMADDL
+- [] SMC
+- [] SMNEGL
+- [] SMSTART
+- [] SMSTOP
+- [] SMSUBL
+- [] SMULH
+- [] SMULL
+- [] SSBB
+- [] ST2G
+- [] ST64B
+- [] ST64BV
+- [] ST64BV0
+- [] STADDB
+- [] STADDLB
+- [] STADDH
+- [] STADDLH
+- [] STADD
+- [] STADDL
+- [] STCLRB
+- [] STCLRLB
+- [] STCLRH
+- [] STCLRLH
+- [] STCLR
+- [] STCLRL
+- [] STEORB
+- [] STEORLB
+- [] STEORH
+- [] STEORLH
+- [] STEOR
+- [] STEORL
+- [] STG
+- [] STGM
+- [] STGP
+- [] STLLRB
+- [] STLLRH
+- [] STLLR
+- [] STLR
+- [] STLRB
+- [] STLRH
+- [] STLUR
+- [] STLURB
+- [] STLURH
+- [] STLXP
+- [] STLXR
+- [] STLXRB
+- [] STLXRH
+- [] STNP
+- [] STP
+- [] STR (immediate)
+- [] STR (register)
+- [] STRB (immediate)
+- [] STRB (register)
+- [] STRH (immediate)
+- [] STRH (register)
+- [] STSETB
+- [] STSETLB
+- [] STSETH
+- [] STSETLH
+- [] STSET
+- [] STSETL
+- [] STSMAXB
+- [] STSMAXLB
+- [] STSMAXH
+- [] STSMAXLH
+- [] STSMAX
+- [] STSMAXL
+- [] STSMINB
+- [] STSMINLB
+- [] STSMINH
+- [] STSMINLH
+- [] STSMIN
+- [] STSMINL
+- [] STTR
+- [] STTRB
+- [] STTRH
+- [] STUMAXB
+- [] STUMAXLB
+- [] STUMAXH
+- [] STUMAXLH
+- [] STUMAX
+- [] STUMAXL
+- [] STUMINB
+- [] STUMINLB
+- [] STUMINH
+- [] STUMINLH
+- [] STUMIN
+- [] STUMINL
+- [] STUR
+- [] STURB
+- [] STURH
+- [] STXP
+- [] STXR
+- [] STXRB
+- [] STXRH
+- [] STZ2G
+- [] STZG
+- [] STZGM
+- [] SUB (extended register)
+- [] SUB (immediate)
+- [] SUB (shifted register)
+- [] SUBG
+- [] SUBP
+- [] SUBPS
+- [] SUBS (extended register)
+- [] SUBS (immediate)
+- [] SUBS (shifted register)
+- [] SVC
+- [] SWPB
+- [] SWPAB
+- [] SWPALB
+- [] SWPLB
+- [] SWPH
+- [] SWPAH
+- [] SWPALH
+- [] SWPLH
+- [] SWP
+- [] SWPA
+- [] SWPAL
+- [] SWPL
+- [] SXTB
+- [] SXTH
+- [] SXTW
+- [] SYS
+- [] SYSL
+- [] TBNZ
+- [] TBZ
+- [] TCANCEL
+- [] TCOMMIT
+- [] TLBI
+- [] TSTART
+- [] TTEST
+- [] TSB CSYNC
+- [] TST (immediate)
+- [] TST (shifted register)
+- [] UBFIZ
+- [] UBFM
+- [] UBFX
+- [] UDF
+- [] UDIV
+- [] UMADDL
+- [] UMNEGL
+- [] UMSUBL
+- [] UMULH
+- [] UMULL
+- [] UXTB
+- [] UXTH
+- [] WFE
+- [] WFET
+- [] WFI
+- [] WFIT
+- [] XAFLAG
+- [] XPACD
+- [] XPACI
+- [] XPACLRI
+- [] YIELD

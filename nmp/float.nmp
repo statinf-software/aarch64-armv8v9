@@ -1,0 +1,14 @@
+op floating = AXFLAG
+
+op AXFLAG()
+    syntax = "axflag"
+    image = "11010101000000000100000001011111"
+    action = {
+        // if !HaveFlagFormatExt() then UNDEFINED;
+        // bit z = PSTATE.Z OR PSTATE.V;
+        // bit c = PSTATE.C AND NOT(PSTATE.V);
+        // PSTATE.N = '0';
+        // PSTATE.Z = z;
+        // PSTATE.C = c;
+        // PSTATE.V = '0';
+    }

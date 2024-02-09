@@ -1,0 +1,377 @@
+
+op arithmetic = ADC | ADCS |
+  ADD_extended | ADD_immediate | ADD_shifted | ADDG | ADDS_extended | ADDS_immediate | ADDS_shifted |
+  ADR | ADRP | ASRV | SBFM | CFINV | CLS | CLZ |
+  CRC32B | CRC32CB | CSEL | CSINC | CSINV | CSNEG
+
+op ADC(sf:u1, rm:REG_INDEX, rn:REG_INDEX, rd:REG_INDEX)
+    syntax = format("adc %s, %s, %s", get32o64Reg(sf, rd), get32o64Reg(sf, rn), get32o64Reg(sf, rm))
+    image = format("%1b0011010000%s000000%s%s",sf,rm.image,rn.image,rd.image)
+    action = {
+        // integer d = UInt(Rd);
+        // integer n = UInt(Rn);
+        // integer m = UInt(Rm);
+        // integer datasize = if sf == '1' then 64 else 32;
+        // bits(datasize) result;
+        // bits(datasize) operand1 = X[n, datasize];
+        // bits(datasize) operand2 = X[m, datasize];
+        // (result, -) = AddWithCarry(operand1, operand2, PSTATE.C);
+        // X[d, datasize] = result;
+    }
+
+op ADCS(sf:u1, rm:REG_INDEX, rn:REG_INDEX, rd:REG_INDEX)
+    syntax = format("adcs %s, %s, %s", get32o64Reg(sf, rd), get32o64Reg(sf, rn), get32o64Reg(sf, rm))
+    image = format("%1b0111010000%s000000%s%s",sf,rm.image,rn.image,rd.image)
+    action = {
+        // integer d = UInt(Rd);
+        // integer n = UInt(Rn);
+        // integer m = UInt(Rm);
+        // integer datasize = if sf == '1' then 64 else 32;
+        // bits(datasize) result;
+        // bits(datasize) operand1 = X[n, datasize];
+        // bits(datasize) operand2 = X[m, datasize];
+        // bits(4) nzcv;
+        // (result, nzcv) = AddWithCarry(operand1, operand2, PSTATE.C);
+        // PSTATE.<N,Z,C,V> = nzcv;
+        // X[d, datasize] = result;
+    }
+
+op ADD_extended(sf:u1, rm:REG_INDEX, option: UIMM3, imm3: IMM3, rn:REG_INDEX, rd:REG_INDEX)
+    syntax = format("add %s, %s, %s%s", get32o64RegoSP(sf, rd), get32o64RegoSP(sf, rn), get32o64RegoZR(sf, rm), extend(option, imm3))
+    image = format("%1b0001011001%s%s%s%s%s", sf,rm.image, option.image, imm3.image,rn.image,rd.image)
+    action = {
+        // bits(datasize) result;
+        // bits(datasize) operand1 = if n == 31 then SP[]<datasize-1:0> else X[n, datasize];
+        // bits(datasize) operand2 = ExtendReg(m, extend_type, shift, datasize);
+        // (result, -) = AddWithCarry(operand1, operand2, '0');
+        // if d == 31 then
+        // SP[] = ZeroExtend(result, 64);
+        // else
+        // X[d, datasize] = result;
+    }
+
+op ADD_immediate(sf:u1, sh:u1,imm12: s12, rn:REG_INDEX, rd:REG_INDEX)
+    syntax = format("add %s, %s, #%d%s", get32o64RegoSP(sf, rd), get32o64RegoSP(sf, rn), imm12, shiftlbl(sh))
+    image = format("%1b00100010%1b%12b%s%s", sf, sh, imm12, rn.image, rd.image)
+    action = {
+        // integer d = UInt(Rd);
+        // integer n = UInt(Rn);
+        // integer datasize = if sf == '1' then 64 else 32;
+        // bits(datasize) imm;
+        // case sh of
+        // when '0' imm = ZeroExtend(imm12, datasize);
+        // when '1' imm = ZeroExtend(imm12:Zeros(12), datasize);
+        // bits(datasize) result;
+        // bits(datasize) operand1 = if n == 31 then SP[]<datasize-1:0> else X[n, datasize];
+        // (result, -) = AddWithCarry(operand1, imm, '0');
+        // if d == 31 then
+        // SP[] = ZeroExtend(result, 64);
+        // else
+        // X[d, datasize] = result;
+    }
+
+op ADD_shifted(sf:u1, sh:u2, rm:REG_INDEX, imm6: s6, rn:REG_INDEX, rd:REG_INDEX)
+   syntax = format("add %s, %s, %s%s", get32o64Reg(sf, rd), get32o64Reg(sf, rn), get32o64Reg(sf, rm), shiftlblV(sh,imm6))
+    image = format("%1b0001011%2b0%s%6b%s%s", sf, sh, rn.image, imm6, rm.image, rd.image)
+    action = {
+        // integer d = UInt(Rd);
+        // integer n = UInt(Rn);
+        // integer m = UInt(Rm);
+        // integer datasize = if sf == '1' then 64 else 32;
+        // if shift == '11' then UNDEFINED;
+        // if sf == '0' && imm6<5> == '1' then UNDEFINED;
+        // ShiftType shift_type = Decodeshiftlbl(shift);
+        // integer shift_amount = UInt(imm6);
+        // bits(datasize) result;
+        // bits(datasize) operand1 = X[n, datasize];
+        // bits(datasize) operand2 = ShiftReg(m, shift_type, shift_amount, datasize);
+        // (result, -) = AddWithCarry(operand1, operand2, '0');
+        // X[d, datasize] = result;
+    }
+
+op ADDG(uimm6: u6, op3:u2, uimm4: u4, Xn: REG_INDEX, Xd: REG_INDEX)
+    syntax = format("addg %s, %s, #%d, #%d", get64RegoSP(Xd), get64RegoSP(Xn), uimm6, uimm4)
+    image = format("1001000110%6b%2b%4b%s%s", uimm6, op3, uimm4, Xn.image, Xd.image)
+    action = {
+        // if !HaveMTEExt() then UNDEFINED;
+        // integer d = UInt(Xd);
+        // integer n = UInt(Xn);
+        // bits(64) offset = LSL(ZeroExtend(uimm6, 64), LOG2_TAG_GRANULE);
+        // bits(64) operand1 = if n == 31 then SP[] else X[n, 64];
+        // bits(4) start_tag = AArch64.AllocationTagFromAddress(operand1);
+        // bits(16) exclude = GCR_EL1.Exclude;
+        // bits(64) result;
+        // bits(4) rtag;
+        // if AArch64.AllocationTagAccessIsEnabled(PSTATE.EL) then
+        // rtag = AArch64.ChooseNonExcludedTag(start_tag, uimm4, exclude);
+        // else
+        // rtag = '0000';
+        // (result, -) = AddWithCarry(operand1, offset, '0');
+        // result = AArch64.AddressWithAllocationTag(result, rtag);
+        // if d == 31 then
+        // SP[] = result;
+        // else
+        // X[d, 64] = result;
+    }
+
+op ADDS_extended(sf:u1, Rm: REG_INDEX, option: u3,imm3: s3, Rn: REG_INDEX, Rd: REG_INDEX)
+    syntax = format("adds %s, %s, %s, %s", get32o64Reg(sf,Rd), get32o64RegoSP(sf,Rn), get32o64RegoZR(sf,Rm), extend(option, imm3))
+    image = format("%1b0101011001%s%3b%3b%s%s", sf, Rm.image, option, imm3, Rn.image, Rd.image)
+    action = {
+        // integer d = UInt(Rd);
+        // integer n = UInt(Rn);
+        // integer m = UInt(Rm);
+        // integer datasize = if sf == '1' then 64 else 32;
+        // ExtendType extend_type = DecodeRegExtend(option);
+        // integer shift = UInt(imm3);
+        // if shift > 4 then UNDEFINED;
+        // bits(datasize) result;
+        // bits(datasize) operand1 = if n == 31 then SP[]<datasize-1:0> else X[n, datasize];
+        // bits(datasize) operand2 = ExtendReg(m, extend_type, shift, datasize);
+        // bits(4) nzcv;
+        // (result, nzcv) = AddWithCarry(operand1, operand2, '0');
+        // PSTATE.<N,Z,C,V> = nzcv;
+        // X[d, datasize] = result;
+    }
+
+op ADDS_immediate(sf:u1, sh:u1, imm12:s12, Rn: REG_INDEX, Rd: REG_INDEX)
+    syntax = format("adds %s, %s, #%d%s", get32o64Reg(sf, Rd), get32o64RegoSP(sf, Rn), imm12, shiftlbl(sh))
+    image = format("%1b01100010%1b%12b%s%s", sf, sh, imm12, Rn.image, Rd.image)
+    action = {
+        // integer d = UInt(Rd);
+        // integer n = UInt(Rn);
+        // integer datasize = if sf == '1' then 64 else 32;
+        // bits(datasize) imm;
+        // case sh of
+        // when '0' imm = ZeroExtend(imm12, datasize);
+        // when '1' imm = ZeroExtend(imm12:Zeros(12), datasize);
+        // bits(datasize) result;
+        // bits(datasize) operand1 = if n == 31 then SP[]<datasize-1:0> else X[n, datasize];
+        // bits(4) nzcv;
+        // (result, nzcv) = AddWithCarry(operand1, imm, '0');
+        // PSTATE.<N,Z,C,V> = nzcv;
+        // X[d, datasize] = result;
+    }
+
+op ADDS_shifted(sf:u1, sh:s2,Rm: REG_INDEX, imm6: s6, Rn: REG_INDEX, Rd: REG_INDEX)
+    syntax = format("adds %s, %s, %s%s", get32o64Reg(sf, Rd), get32o64Reg(sf, Rn), get32o64Reg(sf,Rm), shiftlblV(sh,imm6))
+    image = format("%1b0101011%2b0%s%6b%s%s",sf,sh,Rm.image,imm6,Rn.image,Rd.image)
+    action = {
+        // integer d = UInt(Rd);
+        // integer n = UInt(Rn);
+        // integer m = UInt(Rm);
+        // integer datasize = if sf == '1' then 64 else 32;
+        // if sh == '11' then UNDEFINED;
+        // if sf == '0' && imm6<5> == '1' then UNDEFINED;
+        // ShiftType shift_type = Decodeshiftlbl(sh);
+        // integer shift_amount = UInt(imm6);
+        // bits(datasize) result;
+        // bits(datasize) operand1 = X[n, datasize];
+        // bits(datasize) operand2 = ShiftReg(m, shift_type, shift_amount, datasize);
+        // bits(4) nzcv;
+        // (result, nzcv) = AddWithCarry(operand1, operand2, '0');
+        // PSTATE.<N,Z,C,V> = nzcv;
+        // X[d, datasize] = result;
+    }
+
+op ADR(immlo:u2,immhi: u19, Rd: REG_INDEX)
+    syntax = format("adr %s, %d", get64Reg(Rd), imm_concat(SignExtend(immhi, 64),ZeroExtend(immlo, 64),2))
+    image = format("0%2b10000%19b%s", immlo, immhi, Rd.image)
+    action = {
+        X[Rd] = NPC + (SignExtend(imm_concat(immhi,immlo,2), 64));
+    }
+
+op ADRP(immlo:u64,immhi: u64, Rd: REG_INDEX)
+    syntax = format("adrp %s, %@", get64Reg(Rd), (imm_concat(immhi, immlo, 2) << 12))
+    image = format("1%2b10000%19b%s", immlo, immhi, Rd.image)
+    action = {
+        X[Rd] = (NPC + (imm_concat(immhi, immlo, 2))) & ((-1) << 12) ;
+    }
+
+op ASRV(sf:u1, Rm:REG_INDEX, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("asrv %s, %s, %s", get32o64Reg(sf, Rd), get32o64Reg(sf, Rm), get32o64Reg(sf, Rn))
+    image = format("%1b0011010110%s001010%s%s", sf, Rm.image,Rn.image, Rd.image)
+    action = {
+        // integer d = UInt(Rd);
+        // integer n = UInt(Rn);
+        // integer m = UInt(Rm);
+        // integer datasize = if sf == '1' then 64 else 32;
+        // ShiftType shift_type = DecodeShift(op2);
+        // bits(datasize) result;
+        // bits(datasize) operand2 = X[m, datasize];
+        // result = ShiftReg(n, shift_type, UInt(operand2) MOD datasize, datasize);
+        // X[d, datasize] = result;
+    }
+
+//idem ASR_immediate
+op SBFM(sf:u1,N:u1,immr:u6,imms:u6,Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("sbfm %s, %s, #%d, #%d", get32o64Reg(sf && N, Rd), get32o64Reg(sf && N, Rn), immr, imms)
+    image = format("%1b00100110%1b%6b%6b%s%s", sf, N, immr, imms, Rn.image, Rd.image)
+    action = {
+        // integer d = UInt(Rd);
+        // integer n = UInt(Rn);
+        // integer datasize = if sf == '1' then 64 else 32;
+        // integer r;
+        // integer s;
+        // bits(datasize) wmask;
+        // bits(datasize) tmask;
+        // if sf == '1' && N != '1' then UNDEFINED;
+        // if sf == '0' && (N != '0' || immr<5> != '0' || imms<5> != '0') then UNDEFINED;
+        // r = UInt(immr);
+        // s = UInt(imms);
+        // (wmask, tmask) = DecodeBitMasks(N, imms, immr, FALSE, datasize);
+        // bits(datasize) src = X[n, datasize];
+        // // perform bitfield move on low bits
+        // bits(datasize) bot = ROR(src, r) AND wmask;
+        // // determine extension bits (sign, zero or dest register)
+        // bits(datasize) top = Replicate(src<s>, datasize);
+        // // combine extension bits and result bits
+        // X[d, datasize] = (top AND NOT(tmask)) OR (bot AND tmask);
+    }
+
+op CFINV()
+    syntax = "cfinv"
+    image = "1 1 0 1 0 1 0 1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 1 1 1 1 1"
+    action = {
+        //if !HaveFlagManipulateExt() then UNDEFINED;
+        //PSTATE.C = NOT(PSTATE.C);
+    }
+
+op CLS(sf: u1, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("cls %s, %s", get32o64Reg(sf, Rd), get32o64Reg(sf, Rn))
+    image = format("%1b 1 0 1 1 0 1 0 1 1 0 0 0 0 0 0 0 0 0 1 0 1 %s%s", sf, Rn.image, Rd.image)
+    action = {
+        // integer d = UInt(Rd);
+        // integer n = UInt(Rn);
+        // integer datasize = if sf == '1' then 64 else 32;
+        // integer result;
+        // bits(datasize) operand1 = X[n, datasize];
+        // result = CountLeadingSignBits(operand1);
+        // X[d, datasize] = result<datasize-1:0>;
+    }
+
+op CLZ(sf: u1, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("clz %s, %s", get32o64Reg(sf, Rd), get32o64Reg(sf, Rn))
+    image = format("%1b 1 0 1 1 0 1 0 1 1 0 0 0 0 0 0 0 0 0 1 0 0 %s%s", sf, Rn.image, Rd.image)
+    action = {
+        // integer d = UInt(Rd);
+        // integer n = UInt(Rn);
+        // integer datasize = if sf == '1' then 64 else 32;
+        // integer result;
+        // bits(datasize) operand1 = X[n, datasize];
+        // result = CountLeadingZeroBits(operand1);
+        // X[d, datasize] = result<datasize-1:0>;
+    }
+
+macro getCRC32BVariant(sf, sz) = \
+    if sf == 0 && sz == 0 then \
+        "crc32b" \
+    else if sf == 0 && sz == 1 then \
+        "crc32h" \
+    else if sf == 0 && sz == 2 then \
+        "crc32w" \
+    else if sf == 1 && sz == 3 then \
+        "crc32x" \
+    else "undefined crc32" \
+    endif \
+    endif \
+    endif \
+    endif 
+
+op CRC32B(sf:u1, Rm:REG_INDEX, sz:u2, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("%s %s, %s, %s", getCRC32BVariant(sf, sz), get32Reg(Rd), get32Reg(Rn), get32o64Reg(sf==1 && sz==3, Rm))
+    image = format("%1b 0 0 1 1 0 1 0 1 1 0 %s 0 1 0 0 %2b %s %s", sf, Rm.image, sz, Rn.image, Rd.image)
+    action = {
+    }
+
+
+macro getCRC32CBVariant(sf, sz) = \
+    if sf == 0 && sz == 0 then \
+        "crc32cb" \
+    else if sf == 0 && sz == 1 then \
+        "crc32ch" \
+    else if sf == 0 && sz == 2 then \
+        "crc32cw" \
+    else if sf == 1 && sz == 3 then \
+        "crc32cx" \
+    else "undefined crc32" \
+    endif \
+    endif \
+    endif \
+    endif 
+
+op CRC32CB(sf:u1, Rm:REG_INDEX, sz:u2, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("%s %s, %s, %s", getCRC32CBVariant(sf, sz), get32Reg(Rd), get32Reg(Rn), get32o64Reg(sf==1 && sz==3, Rm))
+    image = format("%1b 0 0 1 1 0 1 0 1 1 0 %s 0 1 0 1 %2b %s %s", sf, Rm.image, sz, Rn.image, Rd.image)
+    action = {
+    }
+
+op CSEL(sf:u1, Rm:REG_INDEX, cond:u4, Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("csel %s, %s, %s, %d", get32o64Reg(sf, Rd), get32o64Reg(sf, Rn), get32o64Reg(sf, Rm), cond)
+    image = format("%1b 0 0 1 1 0 1 0 1 0 0 %s %4b 0 0%s%s", sf, Rm.image, cond, Rn.image, Rd.image)
+    action = {
+    }
+
+op CSINC(sf:u1, Rm:REG_INDEX, cond:u4, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("csinc %s, %s, %s, %d", get32o64Reg(sf, Rd), get32o64Reg(sf, Rn), get32o64Reg(sf, Rm), cond)
+    image = format("%1b 0 0 1 1 0 1 0 1 0 0 %s %4b 0 1 %s %s", sf, Rm.image, cond, Rn.image, Rd.image)
+    action = {
+    }
+
+op CSINV(sf:u1, Rm:REG_INDEX, cond:u4, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("csinv %s, %s, %s, %d", get32o64Reg(sf, Rd), get32o64Reg(sf, Rn), get32o64Reg(sf, Rm), cond)
+    image = format("%1b 1 0 1 1 0 1 0 1 0 0 %s %4b 0 0 %s %s", sf, Rm.image, cond, Rn.image, Rd.image)
+    action = {
+    }
+
+op CSNEG(sf:u1, Rm:REG_INDEX, cond:u4, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("csneg %s, %s, %s, %d", get32o64Reg(sf, Rd), get32o64Reg(sf, Rn), get32o64Reg(sf, Rm), cond)
+    image = format("%1b 1 0 1 1 0 1 0 1 0 0 %s %4b 0 1 %s %s", sf, Rm.image, cond, Rn.image, Rd.image)
+    action = {
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,3 @@
+var imm64[1, card(64)]
+var targetAddress[1, card(64)]
+var result[1, card(1)]
