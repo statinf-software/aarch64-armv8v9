@@ -2,7 +2,7 @@ op memory = CPYFP | CPYFPN | CPYFPRN | CPYFPRT | CPYFPRTN | CPYFPRTRN | CPYFPRTW
     CPYFPT | CPYFPTN | CPYFPTRN | CPYFPTWN | CPYFPWN | CPYFPWT | CPYFPWTN | CPYFPWTRN | CPYFPWTWN |
     CPYP | CPYPN | CPYPRN | CPYPRT | CPYPRTN | CPYPRTRN | CPYPRTWN | 
     CPYPT | CPYPTN | CPYPTRN | CPYPTWN | CPYPWN | CPYPWT | CPYPWTRN | CPYPWTWN |
-    CSDB 
+    CSDB | DGH | DMB | DSB
 
 macro getCPYFPVariant(op1) = \
     if op1 == 2 then \
@@ -1041,14 +1041,29 @@ op CSDB()
         //ConsumptionOfSpeculativeDataBarrier();
     }
 
+op DGH()
+    syntax = "dgh"
+    image = "1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 0 0 0 0 0 1 1 0 1 1 1 1 1"
+    action = {
+    }
 
+op DMB(CRm:u4)
+    syntax = format("dmb  #%d", CRm)
+    image = format("1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 1 %4b 1 0 1 1 1 1 1 1", CRm)
+    action = {
+    }
 
+op DSB(CRm:u4)
+    syntax = format("dsb  #%d", CRm)
+    image = format("1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 1 %4b 1 0 0 1 1 1 1 1", CRm)
+    action = {
+    }
 
-
-
-
-
-
+op ISB(CRm:u4)
+    syntax = format("isb  #%d", CRm)
+    image = format("1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 1 %4b 1 1 0 1 1 1 1 1", CRm)
+    action = {
+    }
 
 
 

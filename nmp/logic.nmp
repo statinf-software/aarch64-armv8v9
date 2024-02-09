@@ -1,5 +1,6 @@
 op logic = AND_immediate | AND_shifted | ANDS_immediate | ANDS_shifted | 
-    CASB | CASH | CASP | CAS | CCMN_immediate | CCMN_register | CCMP_immediate | CCMP_register
+    CASB | CASH | CASP | CAS | CCMN_immediate | CCMN_register | CCMP_immediate | CCMP_register |
+    EON | EOR_immediate | EOR_register
 
 op AND_immediate(sf:u1, N:u1, immr:u6, imms:u6, Rn:REG_INDEX,Rd:REG_INDEX)
     //32/AND <Xd|SP>, <Xn>, #<imm>
@@ -348,3 +349,29 @@ op CCMP_register(sf:u1, Rm:REG_INDEX, cond:u4, Rn:REG_INDEX, nzcv: u4)
         // (-, flags) = AddWithCarry(operand1, operand2, '1');
         // PSTATE.<N,Z,C,V> = flags;
     }
+
+op EON(sf:u1,sh:u2, Rm:REG_INDEX, imm6:u6, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("eon %s, %s, %s%s", get32o64Reg(sf, Rd), get32o64Reg(sf,Rn), get32o64Reg(sf,Rm), shiftlblV(sh, imm6))
+    image = format("%1b 1 0 0 1 0 1 0 %2b 1 %s %6b %s %s", sf, sh, Rm.image, imm6, Rn.image, Rd.image)
+    action = {
+    }
+
+op EOR_immediate(sf:u1, N:u1, immr:u6, imms:u6, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = "eor immediate"
+    image = format("%1b 1 0 1 0 0 1 0 0 %1b %6b %6b %s%s", sf, N, immr, imms, Rn.image, Rd.image)
+    action = {
+    }
+
+op EOR_register(sf:u1, sh:u2, Rm:REG_INDEX, imm6:u6, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("eor %s, %s, %s%s", get32o64Reg(sf, Rd), get32o64Reg(sf,Rn), get32o64Reg(sf,Rm), shiftlblV(sh, imm6))
+    image = format("%1b 1 0 0 1 0 1 0 %2b 0 %s %6b %s %s", sf, sh, Rm.image, imm6, Rn.image, Rd.image)
+    action = {
+    }
+
+
+
+
+
+
+
+
