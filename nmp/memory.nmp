@@ -2,7 +2,7 @@ op memory = CPYFP | CPYFPN | CPYFPRN | CPYFPRT | CPYFPRTN | CPYFPRTRN | CPYFPRTW
     CPYFPT | CPYFPTN | CPYFPTRN | CPYFPTWN | CPYFPWN | CPYFPWT | CPYFPWTN | CPYFPWTRN | CPYFPWTWN |
     CPYP | CPYPN | CPYPRN | CPYPRT | CPYPRTN | CPYPRTRN | CPYPRTWN | 
     CPYPT | CPYPTN | CPYPTRN | CPYPTWN | CPYPWN | CPYPWT | CPYPWTRN | CPYPWTWN |
-    CSDB | DGH | DMB | DSB
+    CSDB | DGH | DMB | DSB | loads
 
 macro getCPYFPVariant(op1) = \
     if op1 == 2 then \
@@ -1064,6 +1064,290 @@ op ISB(CRm:u4)
     image = format("1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 1 %4b 1 1 0 1 1 1 1 1", CRm)
     action = {
     }
+
+op loads = LD64B | LDADDB | LDADDH | LDADD | LDAPR | LDAPRB | LDAPRH | LDAPUR | LDAPURB | LDAPURH | LDAPURSB | LDAPURSH | LDAPURSW |
+    LDAR | LDARB | LDARH | LDAXP | LDAXR | LDAXRB | LDAXRH | LDCLRB | LDCLRH | LDCLR | LDEORB | LDEORH | LDEOR
+
+op LD64B(Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("ld64b %s, [%s]", get64Reg(Rt), get64RegoSP(Rn))
+    image = format("1 1 1 1 1 0 0 0 0 0 1 1 1 1 1 1 1 1 0 1 0 0 %s%s", Rn.image, Rt.image)
+    action = {
+    }
+
+macro getLDADDBVariante(A,R) = \
+    if A == 1 && R == 0 then \
+        "ldaddab" \
+    else if A == 1 && R == 1 then \
+        "ldaddalb" \
+    else if A == 0 && R == 0 then \
+        "ldaddb" \
+    else if A == 0 && R == 1 then \
+        "ldaddlb" \
+    else "undefined lda??" \
+    endif \
+    endif \
+    endif \
+    endif
+
+op LDADDB(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("%s %s, %s, [%s]", getLDADDBVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    image = format("0 0 1 1 1 0 0 0 %1b %1b 1 %s 0 0 0 0 0 0 %s%s", A,R,Rs.image, Rn.image, Rt.image)
+    action = {
+    }
+
+macro getLDADDHVariante(A,R) = \
+    if A == 1 && R == 0 then \
+        "ldaddah" \
+    else if A == 1 && R == 1 then \
+        "ldaddalh" \
+    else if A == 0 && R == 0 then \
+        "ldaddhh" \
+    else if A == 0 && R == 1 then \
+        "ldaddlh" \
+    else "undefined lda??" \
+    endif \
+    endif \
+    endif \
+    endif
+
+op LDADDH(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("%s %s, %s, [%s]", getLDADDHVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    image = format("0 1 1 1 1 0 0 0 %1b %1b 1 %s 0 0 0 0 0 0 %s%s", A,R,Rs.image, Rn.image, Rt.image)
+    action = {
+    }
+
+macro getLDADDVariante(A,R) = \
+    if A == 0 && R == 0 then \
+        "ldadd" \
+    else if A == 1 && R == 0 then \
+        "ldadda" \
+    else if A == 1 && R == 1 then \
+        "ldaddal" \
+    else if A == 0 && R == 1 then \
+        "ldaddl" \
+    else "undefined lda??" \
+    endif \
+    endif \
+    endif \
+    endif
+
+op LDADD(sf:u1, A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("%s %s, %s, [%s]", getLDADDVariante(A,R), get32o64Reg(sf, Rs), get32o64Reg(sf, Rt), get64RegoSP(Rn))
+    image = format("1 %1b 1 1 1 0 0 0 %1b %1b 1 %s 0 0 0 0 0 0 %s%s", sf, A,R,Rs.image, Rn.image, Rt.image)
+    action = {
+    }
+
+op LDAPR(sf:u1, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("ldapr %s, [%s]", get32o64Reg(sf, Rt), get64RegoSP(Rn))
+    image = format("1 %1b 1 1 1 0 0 0 1 0 1 1 1 1 1 1 1 1 0 0 0 0 %s%s", sf, Rn.image, Rt.image)
+    action = {
+    }
+
+op LDAPRB(Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("ldaprb %s, [%s]", get32Reg(Rt), get64RegoSP(Rn))
+    image = format("0 0 1 1 1 0 0 0 1 0 1 1 1 1 1 1 1 1 0 0 0 0 %s%s", Rn.image, Rt.image)
+    action = {
+    }
+
+op LDAPRH(Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("ldaprh %s, [%s]", get32Reg(Rt), get64RegoSP(Rn))
+    image = format("0 1 1 1 1 0 0 0 1 0 1 1 1 1 1 1 1 1 0 0 0 0 %s%s", Rn.image, Rt.image)
+    action = {
+    }
+
+op LDAPUR(sf:u1, imm9:u9, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("ldapur %s, [%s, #%d]", get32o64Reg(sf,Rt), get64RegoSP(Rn), imm9)
+    image = format("1 %1b 0 1 1 0 0 1 0 1 0 %9b 00 %s%s", sf, imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op LDAPURB(imm9:u9, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("ldapurb %s, [%s, #%d]", get32Reg(Rt), get64RegoSP(Rn), imm9)
+    image = format("0 0 0 1 1 0 0 1 0 1 0 %9b 0 0 %s%s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op LDAPURH(imm9:u9, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("ldapurh %s, [%s, #%d]", get32Reg(Rt), get64RegoSP(Rn), imm9)
+    image = format("0 1 0 1 1 0 0 1 0 1 0 %9b 00 %s%s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op LDAPURSB(opc:u1, imm9:u9, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("ldapursb %s, [%s, #%d]", get32o64Reg(opc==0, Rt), get64RegoSP(Rn), imm9)
+    image = format("0 0 0 1 1 0 0 1 1 %1b 0 %9b 00 %s%s", opc, imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op LDAPURSH(opc:u1, imm9:u9, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("ldapursh %s, [%s, #%d]", get32o64Reg(opc==0,Rt), get64RegoSP(Rn), imm9)
+    image = format("0 1 0 1 1 0 0 1 1 %1b 0 %9b 00 %s%s", opc, imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op LDAPURSW(imm9:u9, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("ldapursw %s, [%s, #%d]", get32Reg(Rt), get64RegoSP(Rn), imm9)
+    image = format("1 0 0 1 1 0 0 1 1 0 0 %9b 00 %s%s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op LDAR(sf:u1, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("ldar %s, [%s]", get32o64Reg(sf, Rt), get64RegoSP(Rn))
+    image = format("1 %1b 0 0 1 0 0 0 1 1 0 1 1 1 1 1 1 1 1 1 1 1 %s%s", sf, Rn.image, Rt.image)
+    action = {
+    }
+
+op LDARB(Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("ldarb %s, [%s]", get32Reg(Rt), get64RegoSP(Rn))
+    image = format("0 0 0 0 1 0 0 0 1 1 0 1 1 1 1 1 1 11 1 1 1 %s%s", Rn.image, Rt.image)
+    action = {
+    }
+
+
+op LDARH(Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("ldarh %s, [%s]", get32Reg(Rt), get64RegoSP(Rn))
+    image = format("0 1 0 0 1 0 0 0 1 1 0 1 1 1 1 1 1 11 1 1 1%s%s", Rn.image, Rt.image)
+    action = {
+    }
+
+op LDAXP(sf:u1, Rn:REG_INDEX, Rt:REG_INDEX, Rt2:REG_INDEX)
+    syntax = format("ldaxp %s, %s, [%s]", get32o64Reg(sf, Rt), get32o64Reg(sf, Rt2), get64RegoSP(Rn))
+    image = format("1 %1b 0 0 1 0 0 0 0 1 11 1 1 1 1 1 %s%s%s", sf, Rt2.image, Rn.image, Rt.image)
+    action = {
+    }
+
+op LDAXR(sf:u1, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("ldaxr %s, [%s]", get32o64Reg(sf, Rt), get64RegoSP(Rn))
+    image = format("1 %1b 0 0 1 0 0 0 0 1 0 1 1 1 1 1 1 1 1 1 1 1 %s%s", sf, Rn.image, Rt.image)
+    action = {
+    }
+
+op LDAXRB(Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("ldaxrb %s, [%s]", get32Reg(Rt), get64RegoSP(Rn))
+    image = format("0 0 0 0 1 0 0 0 0 1 0 1 1 11 1 1 1 1 1 1 1%s%s", Rn.image, Rt.image)
+    action = {
+    }
+
+op LDAXRH(Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("ldaxrh %s, [%s]", get32Reg(Rt), get64RegoSP(Rn))
+    image = format("0 1 0 0 1 0 0 0 0 1 0 1 1 11 1 1 1 1 1 1 1%s%s", Rn.image, Rt.image)
+    action = {
+    }
+
+macro getLDCLRBVariant(A,R) = \
+    if A == 1 && R == 0 then \
+        "ldclrab" \
+    else if A == 1 && R == 1 then \
+        "ldclralb" \
+    else if A == 0 && R == 0 then \
+        "ldclrb" \
+    else if A == 0 && R == 1 then \
+        "ldclrlb" \
+    else "undefined ldcl??" \
+    endif endif endif endif
+
+op LDCLRB(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("%s %s,%s,[%s]", getLDCLRBVariant(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rt))
+    image = format("0 0 1 1 1 0 0 0 %1b %1b 1 %s 0 0 0 1 0 0 %s%s", A, R, Rs.image, Rn.image, Rt.image)
+    action = {
+    }
+
+macro getLDCLRHVariant(A,R) = \
+    if A == 1 && R == 0 then \
+        "ldclrah" \
+    else if A == 1 && R == 1 then \
+        "ldclralh" \
+    else if A == 0 && R == 0 then \
+        "ldclrh" \
+    else if A == 0 && R == 1 then \
+        "ldclrlh" \
+    else "undefined ldcl??" \
+    endif endif endif endif
+
+op LDCLRH(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("%s %s,%s,[%s]", getLDCLRHVariant(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rt))
+    image = format("0 1 1 1 1 0 0 0 %1b %1b 1 %s 0 0 0 1 0 0 %s%s", A, R, Rs.image, Rn.image, Rt.image)
+    action = {
+    }
+
+macro getLDCLRVariant(A,R) = \
+    if A == 1 && R == 0 then \
+        "ldclra" \
+    else if A == 1 && R == 1 then \
+        "ldclral" \
+    else if A == 0 && R == 0 then \
+        "ldclr" \
+    else if A == 0 && R == 1 then \
+        "ldclrl" \
+    else "undefined ldcl??" \
+    endif endif endif endif
+
+op LDCLR(sf:u1, A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("%s %s,%s,[%s]", getLDCLRVariant(A,R), get32o64Reg(sf, Rs), get32o64Reg(sf, Rt), get64RegoSP(Rt))
+    image = format("1 %1b 1 1 1 0 0 0 %1b %1b 1 %s 0 0 0 1 0 0 %s%s", sf, A, R, Rs.image, Rn.image, Rt.image)
+    action = {
+    }
+
+
+macro getLDEORBVariant(A,R) = \
+    if A == 1 && R == 0 then \
+        "ldeorab" \
+    else if A == 1 && R == 1 then \
+        "ldeoralb" \
+    else if A == 0 && R == 0 then \
+        "ldeorb" \
+    else if A == 0 && R == 1 then \
+        "ldeorlb" \
+    else "undefined ldeor??" \
+    endif endif endif endif
+
+op LDEORB(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("%s %s,%s,[%s]", getLDEORBVariant(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rt))
+    image = format("0 0 1 1 1 0 0 0 %1b %1b 1 %s 0 0 1 0 0 0 %s%s", A, R, Rs.image, Rn.image, Rt.image)
+    action = {
+    }
+
+macro getLDEORHVariant(A,R) = \
+    if A == 1 && R == 0 then \
+        "ldeorah" \
+    else if A == 1 && R == 1 then \
+        "ldeoralh" \
+    else if A == 0 && R == 0 then \
+        "ldeorh" \
+    else if A == 0 && R == 1 then \
+        "ldeorlh" \
+    else "undefined ldeor??" \
+    endif endif endif endif
+
+op LDEORH(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("%s %s,%s,[%s]", getLDEORHVariant(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rt))
+    image = format("0 1 1 1 1 0 0 0 %1b %1b 1 %s 0 0 1 0 0 0 %s%s", A, R, Rs.image, Rn.image, Rt.image)
+    action = {
+    }
+
+macro getLDEORVariant(A,R) = \
+    if A == 1 && R == 0 then \
+        "ldeora" \
+    else if A == 1 && R == 1 then \
+        "ldeoral" \
+    else if A == 0 && R == 0 then \
+        "ldeor" \
+    else if A == 0 && R == 1 then \
+        "ldeorl" \
+    else "undefined ldeor??" \
+    endif endif endif endif
+
+op LDEOR(sf:u1, A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("%s %s,%s,[%s]", getLDEORVariant(A,R), get32o64Reg(sf, Rs), get32o64Reg(sf, Rt), get64RegoSP(Rt))
+    image = format("1 %1b 1 1 1 0 0 0 %1b %1b 1 %s 0 0 1 0 0 0 %s%s", sf, A, R, Rs.image, Rn.image, Rt.image)
+    action = {
+    }
+
+
+
+
+
+
 
 
 
