@@ -58,6 +58,7 @@ macro DecodeRegExtend(op) = \
         case 5 : "SXTH" \
         case 6 : "SXTW" \
         case 7 : "SXTX" \
+        default: "LSL" \
     }
 
 macro shiftlbl(sh) = if sh != 0 then "shift" else "" endif

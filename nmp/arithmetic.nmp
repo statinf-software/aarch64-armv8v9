@@ -2,7 +2,8 @@
 op arithmetic = ADC | ADCS |
   ADD_extended | ADD_immediate | ADD_shifted | ADDG | ADDS_extended | ADDS_immediate | ADDS_shifted |
   ADR | ADRP | ASRV | SBFM | CFINV | CLS | CLZ |
-  CRC32B | CRC32CB | CSEL | CSINC | CSINV | CSNEG
+  CRC32B | CRC32CB | CSEL | CSINC | CSINV | CSNEG |
+  LSLV | LSRV
 
 op ADC(sf:u1, rm:REG_INDEX, rn:REG_INDEX, rd:REG_INDEX)
     syntax = format("adc %s, %s, %s", get32o64Reg(sf, rd), get32o64Reg(sf, rn), get32o64Reg(sf, rm))
@@ -284,7 +285,6 @@ op CRC32B(sf:u1, Rm:REG_INDEX, sz:u2, Rn:REG_INDEX, Rd:REG_INDEX)
     action = {
     }
 
-
 macro getCRC32CBVariant(sf, sz) = \
     if sf == 0 && sz == 0 then \
         "crc32cb" \
@@ -330,9 +330,17 @@ op CSNEG(sf:u1, Rm:REG_INDEX, cond:u4, Rn:REG_INDEX, Rd:REG_INDEX)
     action = {
     }
 
+op LSLV(sf:u1, Rm:REG_INDEX,Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("lslv %s, %s, %s", get32o64Reg(sf, Rd), get32o64Reg(sf,Rn), get32o64Reg(sf, Rm))
+    image = format("%1b 0 0 1 1 0 1 0 1 1 0 %s 0 0 1 0 0 0 %s %s", sf, Rm.image, Rn.image, Rd.image)
+    action = {
+    }
 
-
-
+op LSRV(sf:u1, Rm:REG_INDEX,Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("lsrv %s, %s, %s", get32o64Reg(sf, Rd), get32o64Reg(sf,Rn), get32o64Reg(sf, Rm))
+    image = format("%1b 0 0 1 1 0 1 0 1 1 0 %s 0 0 1 0 0 1 %s %s", sf, Rm.image, Rn.image, Rd.image)
+    action = {
+    }
 
 
 
