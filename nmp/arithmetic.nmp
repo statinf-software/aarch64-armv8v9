@@ -3,7 +3,8 @@ op arithmetic = ADC | ADCS |
   ADD_extended | ADD_immediate | ADD_shifted | ADDG | ADDS_extended | ADDS_immediate | ADDS_shifted |
   ADR | ADRP | ASRV | SBFM | CFINV | CLS | CLZ |
   CRC32B | CRC32CB | CSEL | CSINC | CSINV | CSNEG |
-  LSLV | LSRV
+  LSLV | LSRV | MADD | MOVK | MOVN | MOVZ | MSUB |
+  RBIT | REV | REV16 | RMIF | RORV
 
 op ADC(sf:u1, rm:REG_INDEX, rn:REG_INDEX, rd:REG_INDEX)
     syntax = format("adc %s, %s, %s", get32o64Reg(sf, rd), get32o64Reg(sf, rn), get32o64Reg(sf, rm))
@@ -342,22 +343,71 @@ op LSRV(sf:u1, Rm:REG_INDEX,Rn:REG_INDEX, Rd:REG_INDEX)
     action = {
     }
 
+op MADD(sf:u1, Rm:REG_INDEX, Ra:REG_INDEX,Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("madd %s, %s, %s, %s", get32o64Reg(sf, Rd), get32o64Reg(sf,Rn), get32o64Reg(sf, Rm), get32o64Reg(sf, Ra))
+    image = format("%1b 0 0 1 1 0 1 1 0 0 0 %s 0 %s%s%s", sf, Rm.image, Ra.image, Rn.image, Rd.image)
+    action = {
+    }
 
+op MOVK(sf:u1, hw:u2, imm16:u16, Rd:REG_INDEX)
+    syntax = format("movk%s, #%d, LSL #%d", get32o64Reg(sf, Rd), imm16, hw)
+    image = format("%1b 1 1 1 0 0 1 0 1 %2b %16b %s", sf,  hw, imm16, Rd.image)
+    action = {
+    }
 
+op MOVN(sf:u1, hw:u2, imm16:u16, Rd:REG_INDEX)
+    syntax = format("movn%s, #%d, LSL #%d", get32o64Reg(sf, Rd), imm16, hw)
+    image = format("%1b 0 0 1 0 0 1 0 1 %2b %16b %s", sf,  hw, imm16, Rd.image)
+    action = {
+    }
 
+op MOVZ(sf:u1, hw:u2, imm16:u16, Rd:REG_INDEX)
+    syntax = format("movz%s, #%d, LSL #%d", get32o64Reg(sf, Rd), imm16, hw)
+    image = format("%1b 1 0 1 0 0 1 0 1 %2b %16b %s", sf,  hw, imm16, Rd.image)
+    action = {
+    }
 
+op MSUB(sf:u1, Rm:REG_INDEX, Ra:REG_INDEX,Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("msub %s, %s, %s, %s", get32o64Reg(sf, Rd), get32o64Reg(sf,Rn), get32o64Reg(sf, Rm), get32o64Reg(sf, Ra))
+    image = format("%1b 0 0 1 1 0 1 1 0 0 0 %s 1 %s%s%s", sf, Rm.image, Ra.image, Rn.image, Rd.image)
+    action = {
+    }
 
+op RBIT(sf:u1, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("rbit %s, %s", get32o64Reg(sf, Rd), get32o64Reg(sf, Rn))
+    image = format("%1b 1 0 1 1 0 1 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 %s %s", sf, Rn, Rd)
+    action = {
+    }
 
+op REV(sf:u1, opc:u1, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("rev %s, %s", get32o64Reg(sf, Rd), get32o64Reg(sf, Rn))
+    image = format("%1b 1 0 1 1 0 1 0 1 1 0 0 0 0 0 0 0 0 0 0 1 %1b %s %s", sf, opc, Rn, Rd)
+    action = {
+    }
 
+op REV16(sf:u1, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("rev16 %s, %s", get32o64Reg(sf, Rd), get32o64Reg(sf, Rn))
+    image = format("%1b 1 0 1 1 0 1 0 1 1 0 0 0 0 0 0 0 0 0 0 0 1 %s %s", sf, Rn, Rd)
+    action = {
+    }
 
+//op REV32(Rn:REG_INDEX, Rd:REG_INDEX)
+//    syntax = format("rev32 %s, %s", get64Reg(Rd), get64Reg(Rn))
+//    image = format("1 1 0 1 1 0 1 0 1 1 0 0 0 0 0 0 0 0 0 0 1 0 %s %s", Rn, Rd)
+//    action = {
+//    }
 
+op RMIF(imm6:u6, Rn:REG_INDEX, mask:u4)
+    syntax = format("rmif %s, #%d, #%d", get64Reg(Rn), imm6, mask)
+    image = format("1 0 1 1 1 0 1 0 0 0 0 %6b 0 0 0 0 1 %s 0 %4b", imm6, Rn.image, mask)
+    action = {
+    }
 
-
-
-
-
-
-
+op RORV(sf:u1, Rm:REG_INDEX, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("ror %s, %s, %s", get32o64Reg(sf, Rd), get32o64Reg(sf, Rn), get32o64Reg(sf, Rm))
+    image = format("%1b 0 0 1 1 0 1 0 1 1 0 %s 0 0 1 0 1 1 %s %s", sf, Rm, Rn, Rd)
+    action = {
+    }
 
 
 

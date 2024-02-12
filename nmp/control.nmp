@@ -4,7 +4,7 @@ macro BranchTo(addr) = NPC = (addr)
 //| BRB
 op branch = B | B_Cond | BC_Cond | BL | BLR | BLRAA | BLRAAZ | BLRAB | BLRABZ | 
 			BR | BRAA | BRAAZ | BRAB | BRABZ | 
-			CBZ | CBNZ | ERET | ERETAA | ERETAB
+			CBZ | CBNZ | ERET | ERETAA | ERETAB | RET | RETA
 
 //CBNZ CBZ TBNZ TBZ RET
 
@@ -71,38 +71,24 @@ op BLRAA(rn: REG_INDEX, rm: REG_INDEX)
 	syntax = format("blraa X%s,X%s", get64RegoSP(rn), get64RegoSP(rm))
 	image = format("1101011100111111000010%s%s", rn.image, rm.image)
 	action = {
-//todo: deal with authentification stuffs
 	}
 
 op BLRAAZ(rn: REG_INDEX, rm: REG_INDEX)
 	syntax = format("blraaz X%s,X%s", get64RegoSP(rn), get64RegoSP(rm))
 	image = format("1101011000111111000010%s%s", rn.image, rm.image)
 	action = {
-//todo: deal with authentification stuffs
 	}
 
 op BLRAB(rn: REG_INDEX, rm: REG_INDEX)
 	syntax = format("blrab X%s,X%s", get64RegoSP(rn), get64RegoSP(rm))
 	image = format("1101011100111111000011%s%s", rn.image, rm.image)
 	action = {
-//todo: deal with authentification stuffs
 	}
 	
 op BLRABZ(rn: REG_INDEX, rm: REG_INDEX)
 	syntax = format("blrabz X%s,X%s", get64RegoSP(rn), get64RegoSP(rm))
 	image = format("1101011000111111000011%s%s", rn.image, rm.image)
 	action = {
-//todo: deal with authentification stuffs
-		//target = X[rn]
-		//modifier = if (source_is_sp) then SP else X[m] endif;
-		//if use_key_a then
-		//	target = AuthIA(target, modifier, TRUE);
-		//else
-		//	target = AuthIB(target, modifier, TRUE);
-		//X[30] = PC[] + 4;
-		// Value in BTypeNext will be used to set PSTATE.BTYPE
-		//BTypeNext = '10';
-		//BranchTo(target);
 	}
 
 op BR(rn: REG_INDEX)
@@ -125,65 +111,52 @@ op BRAA(rn: REG_INDEX, rm: REG_INDEX)
 	syntax = format("braa X%s,X%s", get64RegoSP(rn), get64RegoSP(rm))
 	image = format("1101011100011111000010%s%s", rn.image, rm.image)
 	action = {
-//todo: deal with authentification stuffs
 	}
 
 op BRAAZ(rn: REG_INDEX, rm: REG_INDEX)
 	syntax = format("braaz X%s,X%s", get64RegoSP(rn), get64RegoSP(rm))
 	image = format("1101011000011111000010%s%s", rn.image, rm.image)
 	action = {
-//todo: deal with authentification stuffs
 	}
 
 op BRAB(rn: REG_INDEX, rm: REG_INDEX)
 	syntax = format("brab X%s,X%s", get64RegoSP(rn), get64RegoSP(rm))
 	image = format("1101011100011111000011%s%s", rn.image, rm.image)
 	action = {
-//todo: deal with authentification stuffs
 	}
 
 op BRABZ(rn: REG_INDEX, rm: REG_INDEX)
 	syntax = format("brabz X%s,X%s", get64RegoSP(rn), get64RegoSP(rm))
 	image = format("1101011000011111000011%s%s", rn.image, rm.image)
 	action = {
-//todo: deal with authentification stuffs
 	}
-
-// op BRB(oper: UIMM3, rt: REG_INDEX)
-// 	syntax = format("brb X%s,X%s", oper.syntax, get64RegoSP(rt))
-// 	image = format("1 1 0 1 0 1 0 1 0 0 0 0 1 0 0 1 0 1 1 1 0 0 1 0%s%s", oper.image, rt.image)
-// 	action = {
-// //BRB <op>{, <Xt>} <=> SYS #1, C7, C2, #<op>{, <Xt>}
-// // op1 == '001' && CRn == '0111' && CRm == '0010' && SysOp('001','0111','0010',op2) == Sys_BRB
-// //AArch64.SysInstr(integer op0, integer op1, integer crn, integer crm, integer op2, integer t);
-// 	}
 
 op CBNZ(sz:u1, imm19:u19, Rt:REG_INDEX)
     syntax = format("cbnz %s, %x", get32o64Reg(sz, Rt), imm19)
     image = format("%1b 0 1 1 0 1 0 1 %19b %s", sz, imm19, Rt.image)
     action = {
-//		integer t = UInt(Rt);
-//integer datasize = if sf == '1' then 64 else 32;
-//bits(64) offset = SignExtend(imm19:'00', 64);
-//bits(datasize) operand1 = X[t, datasize];
-//if IsZero(operand1) == FALSE then
-//BranchTo(PC[] + offset, BranchType_DIR, TRUE);
-//else
-//BranchNotTaken(BranchType_DIR, TRUE);
+	//		integer t = UInt(Rt);
+	//integer datasize = if sf == '1' then 64 else 32;
+	//bits(64) offset = SignExtend(imm19:'00', 64);
+	//bits(datasize) operand1 = X[t, datasize];
+	//if IsZero(operand1) == FALSE then
+	//BranchTo(PC[] + offset, BranchType_DIR, TRUE);
+	//else
+	//BranchNotTaken(BranchType_DIR, TRUE);
     }
 
 op CBZ(sz:u1, imm19:u19, Rt:REG_INDEX)
     syntax = format("cbz %s, %x", get32o64Reg(sz, Rt), imm19)
     image = format("%1b 0 1 1 0 1 0 0 %19b %s", sz, imm19, Rt.image)
     action = {	
-// 		integer t = UInt(Rt);
-// integer datasize = if sf == '1' then 64 else 32;
-// bits(64) offset = SignExtend(imm19:'00', 64);
-// bits(datasize) operand1 = X[t, datasize];
-// if IsZero(operand1) == TRUE then
-// BranchTo(PC[] + offset, BranchType_DIR, TRUE);
-// else
-// BranchNotTaken(BranchType_DIR, TRUE);
+	// 		integer t = UInt(Rt);
+	// integer datasize = if sf == '1' then 64 else 32;
+	// bits(64) offset = SignExtend(imm19:'00', 64);
+	// bits(datasize) operand1 = X[t, datasize];
+	// if IsZero(operand1) == TRUE then
+	// BranchTo(PC[] + offset, BranchType_DIR, TRUE);
+	// else
+	// BranchNotTaken(BranchType_DIR, TRUE);
     }
 
 op ERET()
@@ -201,3 +174,51 @@ op ERETAB()
     image = "1 1 0 1 0 1 1 0 1 0 0 1 1 1 1 1 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1"
     action = {
     }
+
+op RET(Rn:REG_INDEX)
+    syntax = format("ret %s", get64RegoZR(Rn))
+    image = format("1 1 0 1 0 1 1 0 0 1 0 1 1 1 1 1 0 0 0 0 0 0 %s 00000", Rn.image)
+    action = {
+		targetAddress = if Rn == 31 then 
+							UInt64(X[30])
+						else 
+							UInt64(X[Rn])
+						endif;
+		//BTypeNext = '00';
+		BranchTo(targetAddress);
+    }
+
+op RETA(M: u1)
+    syntax = format("%s", if M == 0 then "retaa" else "retab" endif)
+    image = format("1 1 0 1 0 1 1 0 0 1 0 1 1 1 1 1 0 0 0 0 1 %1b 1 1 1 1 1 1 1 1 1 1", M)
+    action = {
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

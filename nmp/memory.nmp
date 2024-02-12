@@ -2,7 +2,7 @@ op memory = CPYFP | CPYFPN | CPYFPRN | CPYFPRT | CPYFPRTN | CPYFPRTRN | CPYFPRTW
     CPYFPT | CPYFPTN | CPYFPTRN | CPYFPTWN | CPYFPWN | CPYFPWT | CPYFPWTN | CPYFPWTRN | CPYFPWTWN |
     CPYP | CPYPN | CPYPRN | CPYPRT | CPYPRTN | CPYPRTRN | CPYPRTWN | 
     CPYPT | CPYPTN | CPYPTRN | CPYPTWN | CPYPWN | CPYPWT | CPYPWTRN | CPYPWTWN |
-    CSDB | DGH | DMB | DSB | loads | loads_atomic
+    CSDB | DGH | DMB | DSB | loads | loads_atomic | other_mem
 
 macro getCPYFPVariant(op1) = \
     if op1 == 2 then \
@@ -1952,23 +1952,109 @@ op LDUMIN(sf:u1,A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
     action = {
     }
 
+//---------------------------------------------------------------------------------------------------
 
+op other_mem = PACDA | PACDB | PACGA | PACIA | PACIAVariante | PACIB | PACIBVariante | PRFM_immediate | PRFM_register | PRFUM | PSBCSYNC
 
+op PACDA(Z:u1, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = if Z == 1 && Rn == 31 then 
+                format("pacdza %s", get64Reg(Rd)) 
+            else 
+                format("pacda %s, %s", get64Reg(Rd), get64RegoSP(Rn)) 
+            endif
+    image = format("1 1 0 1 1 0 1 0 1 1 0 0 0 0 0 1 0 0 %1b 0 1 0 %s%s", Z, Rn, Rd)
+    action = {
+    }
 
+op PACDB(Z:u1, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = if Z == 1 && Rn == 31 then 
+                format("pacdzb %s", get64Reg(Rd)) 
+            else 
+                format("pacdb %s, %s", get64Reg(Rd), get64RegoSP(Rn)) 
+            endif
+    image = format("1 1 0 1 1 0 1 0 1 1 0 0 0 0 0 1 0 0 %1b 0 1 1 %s%s", Z, Rn, Rd)
+    action = {
+    }
 
+op PACGA(Rm:REG_INDEX, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("pacga %s, %s, %s", get64Reg(Rd), get64Reg(Rn), get64RegoSP(Rm))
+    image = format("1 0 0 1 1 0 1 0 1 1 0 %s 0 0 1 1 0 0 %s%s", Rm.image, Rn.image, Rd.image)
+    action = {
+    }
 
+op PACIA(Z:u1, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = if Z == 1 && Rn == 31 then 
+                format("paciza %s", get64Reg(Rd)) 
+            else 
+                format("pacia %s, %s", get64Reg(Rd), get64RegoSP(Rn)) 
+            endif
+    image = format("1 1 0 1 1 0 1 0 1 1 0 0 0 0 0 1 0 0 %1b 0 0 0 %s%s", Z, Rn, Rd)
+    action = {
+    }
 
+macro getPACIAVariante(CRm, op2) = \
+    if CRm == 0 && op2 == 0 then \
+        "pacia1716" \
+    else if CRm == 1 && op2 == 1 then \
+        "paciasp" \
+    else if CRm == 1 && op2 == 0 then \
+        "paciaz" \
+    else "undefined pacia??" \
+    endif endif endif
 
+op PACIAVariante(CRm:u1, op2:u1)
+    syntax = format("%s", getPACIAVariante(CRm, op2))
+    image = format("1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 0 0 0 %1b 1 0 0 %1b 1 1 1 1 1", CRm, op2)
+    action = {}
 
+op PACIB(Z:u1, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = if Z == 1 && Rn == 31 then 
+                format("pacizb %s", get64Reg(Rd)) 
+            else 
+                format("pacib %s, %s", get64Reg(Rd), get64RegoSP(Rn)) 
+            endif
+    image = format("1 1 0 1 1 0 1 0 1 1 0 0 0 0 0 1 0 0 %1b 0 0 1 %s%s", Z, Rn, Rd)
+    action = {
+    }
 
+macro getPACIBVariante(CRm, op2) = \
+    if CRm == 0 && op2 == 0 then \
+        "pacib1716" \
+    else if CRm == 1 && op2 == 1 then \
+        "pacibsp" \
+    else if CRm == 1 && op2 == 0 then \
+        "pacibz" \
+    else "undefined pacib??" \
+    endif endif endif
 
+op PACIBVariante(CRm:u1, op2:u1)
+    syntax = format("%s", getPACIBVariante(CRm, op2))
+    image = format("1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 0 0 0 %1b 1 0 1 %1b 1 1 1 1 1", CRm, op2)
+    action = {}
 
+op PRFM_immediate(imm12:u12, Rn:REG_INDEX, imm5:u5)
+    syntax = format("prfm #%d,[%s,%d]", imm5, get64RegoSP(Rn), imm12)
+    image = format("1 1 1 1 1 0 0 1 1 0 %12b %s %5b",  imm12, Rn.image, imm5)
+    action = {
+    }
 
+op PRFM_register(Rm:REG_INDEX, option:u3, S:u1,Rn:REG_INDEX, imm5:u5)
+    syntax = format("prfm ##%d, [%s,%s%s]", imm5, get64RegoSP(Rn), get32o64Reg(option<0..0>, Rm), extend(option, S))
+    image = format("1 1 1 1 1 0 0 0 1 0 1 %s %3b %1b 1 0 %s %5b", Rm.image, option, S, Rn.image, imm5)
+    action = {
+    }
 
+op PRFUM(imm9:u9, Rn:REG_INDEX, imm5:u5)
+    syntax = format("prfum #%d, [%s,#%d]", imm5, get64RegoSP(Rn), imm5)
+    image = format("1 1 1 1 1 0 0 0 1 0 0 %9b 0 0 %s %5b", imm9, Rn, imm5)
+    action = {
+    }
 
-
-
-
+op PSBCSYNC()
+    syntax = "psb csync"
+    image = "1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 0 0 0 1 0 0 0 1 1 1 1 1 1"
+    action = {
+    }
 
 
 

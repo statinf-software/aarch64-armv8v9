@@ -1,5 +1,6 @@
 op system = SYS | AUTDA | AUTDB | AUTIA | AUTIAVariante | AUTIB | AUTIBVariante | BFM | BIC | BICS |
-    BRK | BTI | CLREX | DCPS1 | DCPS2 | DCPS3 | DRPS | ESB | GMI | HLT | HVC
+    BRK | BTI | CLREX | DCPS1 | DCPS2 | DCPS3 | DRPS | ESB | GMI | HLT | HVC |
+    MRS | MSR_register
 
 // Aliases
 // ATCRn == '0111' && CRm == '100x' && SysOp(op1,'0111',CRm,op2) == Sys_AT
@@ -384,14 +385,52 @@ op IRG(Xm:REG_INDEX, Xn:REG_INDEX, Xd:REG_INDEX)
     action = {
     }
 
+op MRS(o0:u1, op1:u3, CRn:u4, CRm:u4, op2:u3, Rt:REG_INDEX)
+    syntax = format("mrs %s, S_%d_%d_%d_%d_%d", get64Reg(Rt), o0, op1, CRn,CRm,op2)
+    image = format("1 1 0 1 0 1 0 1 0 0 1 1 %1b %3b %4b %4b %3b %s", o0, op1, CRn, CRm, op2, Rt.image)
+    action = {
+    }
 
+macro getPStateField(op1op2, CRm) = \
+    if op1op2 == 27 then \
+        if CRm > 7 then "UNDEFINED" else \
+        if CRm > 5 then "PSTATEField_SVCRSMZA" else \
+        if CRm > 3 then "PSTATEField_SVCRZA" else \
+        "PSTATEField_SVCRSM" \
+        endif endif endif \
+    else \
+    switch(op1op2) { \
+        case 3: "PSTATEField_UAO" \
+        case 4: "PSTATEField_PAN" \
+        case 5: "PSTATEField_SP" \
+        case 8: "PSTATEField_ALLINT" \
+        case 25: "PSTATEField_SSBS" \
+        case 26: "PSTATEField_DIT" \
+        case 28: "PSTATEField_TCO" \
+        case 30: "PSTATEField_DAIFSet" \
+        case 31: "PSTATEField_DAIFClr" \
+        default: "UNDEFINED"\
+    } \
+    endif
 
+//ambiguous
+op MSR_immediate(op1:u3, CRm:u4, op2:u3)
+    syntax = format("msr %d, #%d", imm_concat(op1,op2,3),CRm)//getPStateField(imm_concat(op1,op2,3), CRm), CRm)
+    image = format("1 1 0 1 0 1 0 1 0 0 0 0 0 %3b 0 1 0 0 %4b %3b 1 1 1 1 1", op1, CRm, op2)
+    action = {
+    }
 
+op MSR_register(o0:u1, op1:u3, CRn:u4, CRm:u4, op2:u3, Rt:REG_INDEX)
+    syntax = format("msr , %s", get64Reg(Rt))
+    image = format("1 1 0 1 0 1 0 1 0 0 0 1 %1b %3b %4b %4b %3b %s", o0, op1, CRn, CRm, op2, Rt.image)
+    action = {
+    }
 
-
-
-
-
+op NOP()
+    syntax = "nop"
+    image = "1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 0 0 0 0 0 0 0 0 1 1 1 1 1"
+    action = {
+    }
 
 
 

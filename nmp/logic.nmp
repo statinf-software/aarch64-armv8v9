@@ -1,6 +1,6 @@
 op logic = AND_immediate | AND_shifted | ANDS_immediate | ANDS_shifted | 
     CASB | CASH | CASP | CAS | CCMN_immediate | CCMN_register | CCMP_immediate | CCMP_register |
-    EON | EOR_immediate | EOR_register
+    EON | EOR_immediate | EOR_register | ORN | ORR_immediate | ORR_shifted
 
 op AND_immediate(sf:u1, N:u1, immr:u6, imms:u6, Rn:REG_INDEX,Rd:REG_INDEX)
     //32/AND <Xd|SP>, <Xn>, #<imm>
@@ -368,8 +368,23 @@ op EOR_register(sf:u1, sh:u2, Rm:REG_INDEX, imm6:u6, Rn:REG_INDEX, Rd:REG_INDEX)
     action = {
     }
 
+op ORN(sf:u1,sh:u2, Rm:REG_INDEX, imm6:u6, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("orn %s, %s, %s%s", get32o64Reg(sf, Rd), get32o64Reg(sf,Rn), get32o64Reg(sf,Rm), shiftlblV(sh, imm6))
+    image = format("%1b 0 1 0 1 0 1 0 %2b 1 %s %6b %s %s", sf, sh, Rm.image, imm6, Rn.image, Rd.image)
+    action = {
+    }
 
-
+op ORR_immediate(sf:u1, N:u1, immr:u6, imms:u6, Rn:REG_INDEX,Rd:REG_INDEX)
+    //32/ORR <Xd|SP>, <Xn>, #<imm>
+    syntax = "orr immediate"
+    image = format("%1b 0 1 1 0 0 1 0 0%1b%6b%6b%s%s", sf, N, immr, imms, Rn.image, Rd.image)
+    action = {
+    }
+op ORR_shifted(sf: u1, sh: u2, Rm: REG_INDEX, imm6:u6, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("orr %s, %s, %s%s", get32o64Reg(sf, Rd), get32o64Reg(sf,Rn), get32o64Reg(sf,Rm), shiftlblV(sh, imm6))
+    image = format("%1b 0 1 0 1 0 1 0 %2b 0 %s %6b %s %s", sf, sh, Rm.image, imm6, Rn.image, Rd.image)
+    action = {
+    }
 
 
 
