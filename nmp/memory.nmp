@@ -1537,7 +1537,7 @@ op STRH_reg(Rm:REG_INDEX, option:u3, S:u1, Rt:REG_INDEX, Rn:REG_INDEX)
 
 //----------------------------------------------------------------------------------------
 
-op store_atomics =  ST64B | ST64BV | ST64BV0 | STGP | STLLRB | STLLRH | STLLR | STLRB | STLRH | STLR | STLURB | STLURH | STLUR | STLXP | STLXRB | STLXRH | STLXR | STNP | STTR | STTRB | STTRH | STUR | STURB | STURH | STXP | STXR | STXRB | STXRH | STZ2G_postindex | STZ2G_preindex | STZ2G_signedoffset | STZG_postindex | STZG_preindex | STZG_signedoffset | STZGM | SWP | SWPB | SWPH
+op store_atomics =  ST64B | ST64BV | ST64BV0 | STGP | STLLRB | STLLRH | STLLR | STLRB | STLRH | STLR | STLURB | STLURH | STLUR | STLXP | STLXRB | STLXRH | STLXR | STNP | STTR | STTRB | STTRH | STUR | STURB | STURH | STXP | STXR | STXRB | STXRH | STZ2G_postindex | STZ2G_preindex | STZ2G_signedoffset | STZG_postindex | STZG_preindex | STZG_signedoffset | STZGM | SWP | SWPB | SWPH | TSBSYNC
 
 op ST64B(Rt:REG_INDEX, Rn:REG_INDEX)
     syntax = format("st64b %s, [%s]", get64Reg(Rt), get64RegoSP(Rn))
@@ -1767,7 +1767,11 @@ op SWP(sf:u1, A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
     action = {
     }
 
-
+op TSBSYNC()
+    syntax = "tsb csync"
+    image = "1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 0 0 0 1 0 0 1 0 1 1 1 1 1"
+    action = {
+    }
 
 
 

@@ -5,7 +5,8 @@ op arithmetic = ADC | ADCS |
   CRC32 | CRC32C | CSEL | CSINC | CSINV | CSNEG |
   LSLV | LSRV | MADD | MOVK | MOVN | MOVZ | MSUB |
   RBIT | REV | REV16 | RMIF | RORV | SDIV | SMADDL | SMSUBL | SMULH |
-  SUB_reg | SUB_imm | SUB_shifted | SUBG | SUBP | SUBPS | SUBS_imm | SUBS_reg | SUBS_shifted
+  SUB_reg | SUB_imm | SUB_shifted | SUBG | SUBP | SUBPS | SUBS_imm | SUBS_reg | SUBS_shifted |
+  UBFM | UDIV | UADD | UMSUBL | UMULH
 
 op ADC(sf:u1, rm:REG_INDEX, rn:REG_INDEX, rd:REG_INDEX)
     syntax = format("adc %s, %s, %s", get32o64Reg(sf, rd), get32o64Reg(sf, rn), get32o64Reg(sf, rm))
@@ -466,10 +467,35 @@ op SUBS_shifted(sf:u1, sh:u2, rm:REG_INDEX, imm6: s6, rn:REG_INDEX, rd:REG_INDEX
     action = {
     }
 
+op UBFM(sf:u1, N:u1, immr:u6, imms:u6, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("ubfm %s, %s, #%d, #%d", get32o64Reg(sf, Rd), get32o64Reg(sf, Rn), immr, imms)
+    image = format("%1b 1 0 1 0 0 1 1 0 %1b %6b %6b %s%s", sf, N, immr, imms, Rn.image, Rd.image)
+    action = {
+    }
 
+op UDIV(sf:u1, Rm:REG_INDEX, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("udiv %s, %s, %s", get32o64Reg(sf,Rd), get32o64Reg(sf,Rn), get32o64Reg(sf,Rm))
+    image = format("%1b 0 0 1 1 0 1 0 1 1 0 %s 0 0 0 0 1 0 %s%s", sf, Rm.image, Rn.image, Rd.image)
+    action = {
+    }
 
+op UADD(Rm:REG_INDEX, Ra:REG_INDEX,Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("uadd %s, %s, %s, %s", get64Reg(Rd), get64Reg(Rn), get64Reg(Rm), get64Reg(Ra))
+    image = format("1 0 0 1 1 0 1 1 1 0 1 %s 0 %s%s%s", Rm.image, Ra.image, Rn.image, Rd.image)
+    action = {
+    }
 
+op UMSUBL(Rm:REG_INDEX, Ra:REG_INDEX,Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("umsubl %s, %s, %s, %s", get64Reg(Rd), get64Reg(Rn), get64Reg(Rm), get64Reg(Ra))
+    image = format("1 0 0 1 1 0 1 1 1 0 1 %s 1 %s%s%s", Rm.image, Ra.image, Rn.image, Rd.image)
+    action = {
+    }
 
+op UMULH(Rm:REG_INDEX, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("umulh %s, %s, %s", get64Reg(Rd), get64Reg(Rn), get64Reg(Rm))
+    image = format("1 0 0 1 1 0 1 1 1 1 0 %s 0 1 1 1 1 1 %s%s", Rm.image, Rn.image, Rd.image)
+    action = {
+    }
 
 
 

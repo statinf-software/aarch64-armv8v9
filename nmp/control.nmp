@@ -3,7 +3,8 @@ macro BranchTo(addr) = NPC = (addr)
 
 op branch = B | B_Cond | BC_Cond | BL | BLR | BLRAA | BLRAAZ | BLRAB | BLRABZ | 
 			BR | BRAA | BRAAZ | BRAB | BRABZ | 
-			CBZ | CBNZ | ERET | ERETAA | ERETAB | RET | RETA
+			CBZ | CBNZ | ERET | ERETAA | ERETAB | RET | RETA |
+			TBNZ | TBZ | TCANCEL | TCOMMIT | TSTART
 
 op B(signed_immed_26: IMM26)
 	target = __IADDR + 8 + coerce(int(64), signed_immed_26)
@@ -191,14 +192,41 @@ op RETA(M: u1)
     action = {
     }
 
+op TBNZ(b5:u1, b40:u5, imm14:u14, Rt:REG_INDEX)
+    syntax = format("tbnz %s, #%d, %d", get32o64Reg(b5, Rt), b5::b40, imm14)
+    image = format("%1b 0 1 1 0 1 1 1 %5b %14b %s", b5, b40, imm14, Rt.image)
+    action = {
+    }
 
+op TBZ(b5:u1, b40:u5, imm14:u14, Rt:REG_INDEX)
+    syntax = format("tbz %s, #%d, %d", get32o64Reg(b5, Rt), b5::b40, imm14)
+    image = format("%1b 0 1 1 0 1 1 0 %5b %14b %s", b5, b40, imm14, Rt.image)
+    action = {
+    }
 
+op TCANCEL(imm16: u16)
+	syntax = format("tcancel #%d", imm16)
+	image = format("1 1 0 1 0 1 0 0 0 1 1 %16b 0 0 0 0 0", imm16)
+	action = {
+	}
 
+op TCOMMIT()
+    syntax = "tcommit"
+    image = "1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 1 0 0 0 0 0 1 1 1 1 1 1 1"
+    action = {
+    }
 
+op TSTART(Rt:REG_INDEX)
+    syntax = format("tstart %s", get64Reg(Rt))
+    image = format("1 1 0 1 0 1 0 1 0 0 1 0 0 0 1 1 0 0 1 1 0 0 0 0 0 1 1 %s", Rt.image)
+    action = {
+    }
 
-
-
-
+op TTEST(Rt:REG_INDEX)
+    syntax = format("ttest %s", get64Reg(Rt))
+    image = format("1 1 0 1 0 1 0 1 0 0 1 0 0 0 1 1 0 0 1 1 0 0 0 1 0 1 1 %s", Rt.image)
+    action = {
+    }
 
 
 

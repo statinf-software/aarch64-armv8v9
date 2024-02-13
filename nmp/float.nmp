@@ -1,14 +1,16 @@
-op floating = AXFLAG
+op floating = AXFLAG | XAFLAG
 
 op AXFLAG()
     syntax = "axflag"
     image = "11010101000000000100000001011111"
     action = {
-        // if !HaveFlagFormatExt() then UNDEFINED;
-        // bit z = PSTATE.Z OR PSTATE.V;
-        // bit c = PSTATE.C AND NOT(PSTATE.V);
-        // PSTATE.N = '0';
-        // PSTATE.Z = z;
-        // PSTATE.C = c;
-        // PSTATE.V = '0';
     }
+
+op XAFLAG()
+    syntax = "xaflag"
+    image = "1 1 0 1 0 1 0 1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 1 1 1 1 1 1"
+    action = {
+    }
+
+
+

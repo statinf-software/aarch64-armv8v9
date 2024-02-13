@@ -2,7 +2,8 @@ op system = SYS | SYSL | AUTDA | AUTDB | AUTIA | AUTIAVariante | AUTIB | AUTIBVa
     PACDA | PACDB | PACGA | PACIA | PACIAVariante | PACIB | PACIBVariante |
     BFM | BIC | BICS |
     BRK | BTI | CLREX | DCPS1 | DCPS2 | DCPS3 | DRPS | ESB | GMI | HLT | HVC |
-    MRS | MSR_register | SETF | SEV | SEVL | SMC | SVC
+    MRS | MSR_register | SETF | SEV | SEVL | SMC | SVC | UDF | WFE | WFET | XPAC | XPACLRI |
+    YIELD
 
 op SYS(op1:u3, CRn:u4, CRm: u4, op2:u3, Rt:REG_INDEX)
     syntax = format("sys #%d, %d, %d, #%d, %s", op1, CRn, CRm, op2, get64Reg(Rt))
@@ -501,11 +502,48 @@ op SVC(imm16:u16)
     action = {
     }
 
+op UDF(imm16:u16)
+    syntax = format("udf #%d", imm16)
+    image = format("0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %16b", imm16)
+    action = {
+    }
 
+op WFE()
+    syntax = "wfe"
+    image = "1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 0 0 0 0 0 0 1 0 1 1 1 1 1"
+    action = {
+    }
+op WFET(Rd:REG_INDEX)
+    syntax = format("wfet %s", get64Reg(Rd))
+    image = format("1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 0 1 0 0 0 0 0 0 0 %s", Rd.image)
+    action = {
+    }
 
+op WFI()
+    syntax = "wfi"
+    image = "1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 0 0 0 0 0 0 1 1 1 1 1 1 1"
+    action = {
+    }
+op WFIT(Rd:REG_INDEX)
+    syntax = format("wdit %s", get64Reg(Rd))
+    image = format("1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 0 1 0 0 0 0 0 0 1 %s", Rd.image)
+    action = {
+    }
 
+op XPAC(D:u1, Rd:REG_INDEX)
+    syntax = format("xpac%s %s", if D==1 then "d" else "i" endif, get64Reg(Rd))
+    image = format("1 1 0 1 1 0 1 0 1 1 0 0 0 0 0 1 0 1 0 0 0 %1b 1 1 1 1 1 %s", D, Rd.image)
+    action = {
+    }
 
+op XPACLRI()
+    syntax = "xpaclri"
+    image = "1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 0 0 0 0 0 1 1 1 1 1 1 1 1"
+    action = {
+    }
 
-
-
-
+op YIELD()
+    syntax = "yield"
+    image = "1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 0 0 0 0 0 0 0 1 1 1 1 1 1"
+    action = {
+    }
