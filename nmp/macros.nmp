@@ -67,8 +67,13 @@ macro shiftlblV(sh,imm6) = if sh != 0 then format(", shift #%d", imm6) else "" e
 
 macro extend(option, imm3) = if imm3 != 0 then format(", %s #%d", DecodeRegExtend(option), imm3) else "" endif
 
-
-
+macro getAcquireLoadVariante(L, o0) = \
+    if L == 1 && o0 == 0 then "a" \
+    else if L == 1 && o0 == 1 then "al" \
+    else if L == 0 && o0 == 0 then "" \
+    else if L == 0 && o0 == 1 then "l" \
+    else "??" \
+    endif endif endif endif
 
 
 

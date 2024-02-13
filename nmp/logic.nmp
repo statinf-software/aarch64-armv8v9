@@ -79,28 +79,8 @@ op ANDS_shifted(sf:u1,sh:u2,Rm:REG_INDEX,imm6:u6,Rn:REG_INDEX,Rd:REG_INDEX)
         // X[d, datasize] = result;
     }
 
-macro getCASBVariante(L, o0) = \
-    if L == 1 && o0 == 0 then \
-        "casab" \
-    else \
-        if L == 1 && o0 == 1 then \
-            "casalb" \
-        else \
-            if L == 0 && o0 == 0 then \
-                "casab" \
-            else \
-                if L == 0 && o0 == 1 then \
-                    "caslb" \
-                else \
-                    "undefined casb??" \
-                endif \
-            endif \
-        endif \
-    endif
-
-
 op CASB(L:u1, Rs: REG_INDEX, o0:u1, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getCASBVariante(L, o0), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    syntax = format("cas%sb %s, %s, [%s]", getAcquireLoadVariante(L, o0), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
     image = format("0 0 0 0 1 0 0 0 1 %1b 1 %s %1b 1 1 1 1 1 %s %s", L, Rs.image, o0, Rn.image, Rt.image)
     action = {
         // if !HaveAtomicExt() then UNDEFINED;
@@ -126,23 +106,8 @@ op CASB(L:u1, Rs: REG_INDEX, o0:u1, Rn:REG_INDEX, Rt:REG_INDEX)
         // X[s, 32] = ZeroExtend(data, 32);
     }
 
-macro getCASHVariante(L, o0) = \
-    if L == 1 && o0 == 0 then \
-        "casah" \
-    else if L == 1 && o0 == 1 then \
-        "casalh" \
-    else if L == 0 && o0 == 0 then \
-        "cash" \
-    else if L == 0 && o0 == 1 then \
-        "caslh" \
-    else "undefined casb??" \
-    endif \
-    endif \
-    endif \
-    endif
-
 op CASH(L:u1, Rs: REG_INDEX, o0:u1, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getCASHVariante(L, o0), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    syntax = format("cas%sh %s, %s, [%s]", getAcquireLoadVariante(L, o0), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
     image = format("0 1 0 0 1 0 0 0 1 %1b 1 %s %1b 1 1 1 1 1 %s %s", L, Rs.image, o0, Rn.image, Rt.image)
     action = {
         // if !HaveAtomicExt() then UNDEFINED;
@@ -168,35 +133,8 @@ op CASH(L:u1, Rs: REG_INDEX, o0:u1, Rn:REG_INDEX, Rt:REG_INDEX)
         // X[s, 32] = ZeroExtend(data, 32);
     }
 
-macro getCASPVariante(sz, L, o0) = \
-    if sz == 0 && L == 0 && o0 == 0 then \
-        "casp" \
-    else if sz == 0 && L == 1 && o0 == 0 then \
-        "caspa" \
-    else if sz == 0 && L == 1 && o0 == 1 then \
-        "caspal" \
-    else if sz == 0 && L == 0 && o0 == 1 then \
-        "caspl" \
-    else if sz == 1 && L == 0 && o0 == 0 then \
-        "casp" \
-    else if sz == 1 && L == 1 && o0 == 0 then \
-        "caspa" \
-    else if sz == 1 && L == 1 && o0 == 1 then \
-        "caspal" \
-    else if sz == 1 && L == 0 && o0 == 1 then \
-        "caspl" \
-    else "undefined casb??" \
-    endif \
-    endif \
-    endif \
-    endif \
-    endif \
-    endif \
-    endif \
-    endif
-
 op CASP(sz:u1, L:u1, Rs:REG_INDEX, o0:u1, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, %s+1, [%s]", getCASPVariante(sz,L,o0), get32o64Reg(sz,Rs), get32o64Reg(sz,Rs), get32o64Reg(sz,Rt), get64RegoSP(Rn))
+    syntax = format("casp%s %s, %s, %s+1, [%s]", getAcquireLoadVariante(L,o0), get32o64Reg(sz,Rs), get32o64Reg(sz,Rs), get32o64Reg(sz,Rt), get64RegoSP(Rn))
     image = format("0 %1b 0 0 1 0 0 0 0 %1b 1 %s %1b 1 1 1 1 1 %s %s", sz, L, Rs.image, o0, Rn.image, Rt.image)
     action = {
         // if !HaveAtomicExt() then UNDEFINED;
@@ -234,35 +172,8 @@ op CASP(sz:u1, L:u1, Rs:REG_INDEX, o0:u1, Rn:REG_INDEX, Rt:REG_INDEX)
         // X[s+1, datasize] = data<2*datasize-1:datasize>;
     }
 
-macro getCASVariante(sz, L, o0) = \
-    if sz == 0 && L == 0 && o0 == 0 then \
-        "cas" \
-    else if sz == 0 && L == 1 && o0 == 0 then \
-        "casa" \
-    else if sz == 0 && L == 1 && o0 == 1 then \
-        "casal" \
-    else if sz == 0 && L == 0 && o0 == 1 then \
-        "casl" \
-    else if sz == 1 && L == 0 && o0 == 0 then \
-        "cas" \
-    else if sz == 1 && L == 1 && o0 == 0 then \
-        "casa" \
-    else if sz == 1 && L == 1 && o0 == 1 then \
-        "casal" \
-    else if sz == 1 && L == 0 && o0 == 1 then \
-        "casl" \
-    else "undefined casb??" \
-    endif \
-    endif \
-    endif \
-    endif \
-    endif \
-    endif \
-    endif \
-    endif
-
 op CAS(sz:u1, L:u1, Rs:REG_INDEX, o0:u1, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getCASVariante(sz,L,o0), get32o64Reg(sz,Rs), get64RegoSP(Rn), get64RegoSP(Rt))
+    syntax = format("cas%s %s, %s, [%s]", getAcquireLoadVariante(L,o0), get32o64Reg(sz,Rs), get64RegoSP(Rn), get64RegoSP(Rt))
     image = format("1 %1b 0 0 1 0 0 0 1 %1b 1 %s %1b 1 1 1 1 1 %s %s", sz, L, Rs.image, o0, Rn.image, Rt.image)
     action = {
         // if !HaveAtomicExt() then UNDEFINED;

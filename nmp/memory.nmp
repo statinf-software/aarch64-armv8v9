@@ -1,1038 +1,592 @@
-op memory = CPYFP | CPYFPN | CPYFPRN | CPYFPRT | CPYFPRTN | CPYFPRTRN | CPYFPRTWN |
-    CPYFPT | CPYFPTN | CPYFPTRN | CPYFPTWN | CPYFPWN | CPYFPWT | CPYFPWTN | CPYFPWTRN | CPYFPWTWN |
-    CPYP | CPYPN | CPYPRN | CPYPRT | CPYPRTN | CPYPRTRN | CPYPRTWN | 
-    CPYPT | CPYPTN | CPYPTRN | CPYPTWN | CPYPWN | CPYPWT | CPYPWTRN | CPYPWTWN |
-    CSDB | DGH | DMB | DSB | loads | loads_atomic | other_mem
+op memory = CPYFE|CPYFP|CPYFM|CPYFEN|CPYFPN|CPYFMN|CPYFERN|CPYFPRN|CPYFMRN|CPYFERT|CPYFPRT|CPYFMRT|CPYFERTN|CPYFPRTN|CPYFMRTN|CPYFERTRN|CPYFPRTRN|CPYFMRTRN|CPYFERTWN|CPYFPRTWN|CPYFMRTWN|CPYFET|CPYFPT|CPYFMT|CPYFETN|CPYFPTN|CPYFMTN|CPYFETRN|CPYFPTRN|CPYFMTRN|CPYFETWN|CPYFPTWN|CPYFMTWN|CPYFEWN|CPYFPWN|CPYFMWN|CPYFEWT|CPYFPWT|CPYFMWT|CPYFEWTN|CPYFPWTN|CPYFMWTN|CPYFEWTRN|CPYFPWTRN|CPYFMWTRN|CPYFEWTWN|CPYFPWTWN|CPYFMWTWN|CPYE|CPYP|CPYM|CPYEN|CPYPN|CPYMN|CPYERN|CPYPRN|CPYMRN|CPYERT|CPYPRT|CPYMRT|CPYERTN|CPYPRTN|CPYMRTN|CPYERTRN|CPYPRTRN|CPYMRTRN|CPYERTWN|CPYPRTWN|CPYMRTWN|CPYET|CPYPT|CPYMT|CPYETN|CPYPTN|CPYMTN|CPYETRN|CPYPTRN|CPYMTRN|CPYETWN|CPYPTWN|CPYMTWN|CPYEWN|CPYPWN|CPYMWN|CPYEWT|CPYPWT|CPYMWT|CPYEWTN|CPYPWTN|CPYMWTN|CPYEWTRN|CPYPWTRN|CPYMWTRN|CPYEWTWN|CPYPWTWN|CPYMWTWN |
+    CSDB | DGH | DMB | DSB | loads | loads_atomic | other_mem | store_atomics
 
-macro getCPYFPVariant(op1) = \
-    if op1 == 2 then \
-        "cpyfe" \
-    else if op1 == 1 then \
-            "cpyfm" \
-        else if op1 == 0 then \
-                "cpyfp" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
+macro PEM(op1) = \
+    if op1 == 2 then "e" \
+    else if op1 == 1 then "m" \
+    else if op1 == 0 then "p" \
+    else "??" \
+    endif endif endif
 
-op CPYFP(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b0 1 1 0 0 1%2b0%s0 0 0 0 0 1%s%s", sz,op1,Rs.image,Rn.image,Rd.image)
-    action = {
-        // if !HaveFeatMOPS() then UNDEFINED;
-        // if sz != '00' then UNDEFINED;
-        // integer d = UInt(Rd);
-        // integer s = UInt(Rs);
-        // integer n = UInt(Rn);
-        // bits(4) options = op2;
-        // MOPSStage stage;
-        // case op1 of
-        // when '00' stage = MOPSStage_Prologue;
-        // when '01' stage = MOPSStage_Main;
-        // when '10' stage = MOPSStage_Epilogue;
-        // otherwise SEE "Memory Copy and Memory Set";
-        // CheckMOPSEnabled();
-        // if s == n || s == d || n == d || d == 31 || s == 31 || n == 31 then
-        // c = ConstrainUnpredictable(Unpredictable_MOPSOVERLAP31);
-        // assert c IN {Constraint_UNDEF, Constraint_NOP};
-        // case c of
-        // when Constraint_UNDEF UNDEFINED;
-        // when Constraint_NOP
-        // EndOfInstruction();
-        // integer N = MaxBlockSizeCopiedBytes();
-        // bits(64) toaddress = X[d, 64];
-        // bits(64) fromaddress = X[s, 64];
-        // bits(64) cpysize = X[n, 64];
-        // bits(4) nzcv = PSTATE.<N,Z,C,V>;
-        // bits(64) stagecpysize;
-        // bits(8*N) readdata;
-        // integer B;
-        // boolean supports_option_a = CPYFOptionA();
-        // boolean rprivileged;
-        // boolean wprivileged;
-        // case PSTATE.EL of
-        // when EL0
-        // rprivileged = FALSE;
-        // wprivileged = FALSE;
-        // when EL1
-        // if EL2Enabled() && HaveNVExt() && HCR_EL2.<NV,NV1> == '11' then
-        // rprivileged = TRUE;
-        // wprivileged = TRUE;
-        // else
-        // rprivileged = options<1> == '0';
-        // wprivileged = options<0> == '0';
-        // when EL2
-        // if HaveVirtHostExt() && HCR_EL2.<E2H,TGE> == '11' then
-        // rprivileged = options<1> == '0';
-        // wprivileged = options<0> == '0';
-        // else
-        // rprivileged = TRUE;
-        // wprivileged = TRUE;
-        // when EL3
-        // rprivileged = TRUE;
-        // wprivileged = TRUE;
-        // if HaveUAOExt() && PSTATE.UAO == '1' then
-        // rprivileged = PSTATE.EL != EL0;
-        // wprivileged = PSTATE.EL != EL0;
-        // boolean rnontemporal = options<3> == '1';
-        // boolean wnontemporal = options<2> == '1';
-        // AccessDescriptor raccdesc = CreateAccDescMOPS(MemOp_LOAD, rprivileged, rnontemporal);
-        // AccessDescriptor waccdesc = CreateAccDescMOPS(MemOp_STORE, wprivileged, wnontemporal);
-        // if stage == MOPSStage_Prologue then
-        // if cpysize<63> == '1' then cpysize = 0x7FFFFFFFFFFFFFFF<63:0>;
-        // if supports_option_a then
-        // nzcv = '0000';
-        // // Copy in the forward direction offsets the arguments.
-        // toaddress = toaddress + cpysize;
-        // fromaddress = fromaddress + cpysize;
-        // cpysize = Zeros(64) - cpysize;
-        // else
-        // nzcv = '0010';
-        // // IMP DEF selection of the amount covered by pre-processing.
-        // stagecpysize = CPYPreSizeChoice(toaddress, fromaddress, cpysize);
-        // assert stagecpysize<63> == cpysize<63> || stagecpysize == Zeros(64);
-        // if SInt(cpysize) > 0 then
-        // assert SInt(stagecpysize) <= SInt(cpysize);
-        // else
-        // assert SInt(stagecpysize) >= SInt(cpysize);
-        // else
-        // boolean zero_size_exceptions = MemCpyZeroSizeCheck();
-        // // Check if this version is consistent with the state of the call.
-        // if zero_size_exceptions || SInt(cpysize) != 0 then
-        // if supports_option_a then
-        // if nzcv<1> == '1' then // PSTATE.C
-        // boolean wrong_option = TRUE;
-        // boolean from_epilogue = stage == MOPSStage_Epilogue;
-        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue,options);
-        // else
-        // if nzcv<1> == '0' then // PSTATE.C
-        // boolean wrong_option = TRUE;
-        // boolean from_epilogue = stage == MOPSStage_Epilogue;
-        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue,
-        // options);
-        // bits(64) postsize = CPYPostSizeChoice(toaddress, fromaddress, cpysize);
-        // assert postsize<63> == cpysize<63> || SInt(postsize) == 0;
-        // if stage == MOPSStage_Main then
-        // stagecpysize = cpysize - postsize;
-        // // Check if the parameters to this instruction are valid.
-        // if MemCpyParametersIllformedM(toaddress, fromaddress, cpysize) then
-        // boolean wrong_option = FALSE;
-        // boolean from_epilogue = FALSE;
-        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue, options);
-        // else
-        // stagecpysize = postsize;
-        // // Check if the parameters to this instruction are valid for the epilogue.
-        // if (cpysize != postsize || MemCpyParametersIllformedE(toaddress, fromaddress, cpysize)) then
-        // boolean wrong_option = FALSE;
-        // boolean from_epilogue = TRUE;
-        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue, options);
-        // if supports_option_a then
-        // while SInt(stagecpysize) != 0 do
-        // // IMP DEF selection of the block size that is worked on. While many
-        // // implementations might make this constant, that is not assumed.
-        // B = CPYSizeChoice(toaddress, fromaddress, cpysize);
-        // assert B <= -1 * SInt(stagecpysize);
-        // readdata<B*8-1:0> = Mem[fromaddress+cpysize, B, raccdesc];
-        // Mem[toaddress+cpysize, B, waccdesc] = readdata<B*8-1:0>;
-        // cpysize = cpysize + B;
-        // stagecpysize = stagecpysize + B;
-        // if stage != MOPSStage_Prologue then
-        // X[n, 64] = cpysize;
-        // else
-        // while UInt(stagecpysize) > 0 do
-        // // IMP DEF selection of the block size that is worked on. While many
-        // // implementations might make this constant, that is not assumed.
-        // B = CPYSizeChoice(toaddress, fromaddress, cpysize);
-        // assert B <= UInt(stagecpysize);
-        // readdata<B*8-1:0> = Mem[fromaddress, B, raccdesc];
-        // Mem[toaddress, B, waccdesc] = readdata<B*8-1:0>;
-        // fromaddress = fromaddress + B;
-        // toaddress = toaddress + B;
-        // cpysize = cpysize - B;
-        // stagecpysize = stagecpysize - B;
-        // if stage != MOPSStage_Prologue then
-        // X[n, 64] = cpysize;
-        // X[d, 64] = toaddress;
-        // X[s, 64] = fromaddress;
-        // if stage == MOPSStage_Prologue then
-        // X[n, 64] = cpysize;
-        // X[d, 64] = toaddress;
-        // X[s, 64] = fromaddress;
-        // PSTATE.<N,Z,C,V> = nzcv;
-    }
+macro PEMBit(op1) = op1
 
-macro getCPYFPNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyfen" \
-    else if op1 == 1 then \
-            "cpyfmn" \
-        else if op1 == 0 then \
-                "cpyfpn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
 
-op CPYFPN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!,[%s]!,%s!", getCPYFPNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b0 1 1 0 0 1%2b0%s1 1 0 0 0 1%s%s", sz, op1, Rs.image, Rn.image, Rd.image)
-    action = {
-        // if !HaveFeatMOPS() then UNDEFINED;
-        // if sz != '00' then UNDEFINED;
-        // integer d = UInt(Rd);
-        // integer s = UInt(Rs);
-        // integer n = UInt(Rn);
-        // bits(4) options = op2;
-        // MOPSStage stage;
-        // case op1 of
-        // when '00' stage = MOPSStage_Prologue;
-        // when '01' stage = MOPSStage_Main;
-        // when '10' stage = MOPSStage_Epilogue;
-        // otherwise SEE "Memory Copy and Memory Set";
-        // CheckMOPSEnabled();
-        // if s == n || s == d || n == d || d == 31 || s == 31 || n == 31 then
-        // c = ConstrainUnpredictable(Unpredictable_MOPSOVERLAP31);
-        // assert c IN {Constraint_UNDEF, Constraint_NOP};
-        // case c of
-        // when Constraint_UNDEF UNDEFINED;
-        // when Constraint_NOP
-        // EndOfInstruction();
-        // integer N = MaxBlockSizeCopiedBytes();
-        // bits(64) toaddress = X[d, 64];
-        // bits(64) fromaddress = X[s, 64];
-        // bits(64) cpysize = X[n, 64];
-        // bits(4) nzcv = PSTATE.<N,Z,C,V>;
-        // bits(64) stagecpysize;
-
-        // bits(8*N) readdata;
-        // integer B;
-        // boolean supports_option_a = CPYFOptionA();
-        // boolean rprivileged;
-        // boolean wprivileged;
-        // case PSTATE.EL of
-        // when EL0
-        // rprivileged = FALSE;
-        // wprivileged = FALSE;
-        // when EL1
-        // if EL2Enabled() && HaveNVExt() && HCR_EL2.<NV,NV1> == '11' then
-        // rprivileged = TRUE;
-        // wprivileged = TRUE;
-        // else
-        // rprivileged = options<1> == '0';
-        // wprivileged = options<0> == '0';
-        // when EL2
-        // if HaveVirtHostExt() && HCR_EL2.<E2H,TGE> == '11' then
-        // rprivileged = options<1> == '0';
-        // wprivileged = options<0> == '0';
-        // else
-        // rprivileged = TRUE;
-        // wprivileged = TRUE;
-        // when EL3
-        // rprivileged = TRUE;
-        // wprivileged = TRUE;
-        // if HaveUAOExt() && PSTATE.UAO == '1' then
-        // rprivileged = PSTATE.EL != EL0;
-        // wprivileged = PSTATE.EL != EL0;
-        // boolean rnontemporal = options<3> == '1';
-        // boolean wnontemporal = options<2> == '1';
-        // AccessDescriptor raccdesc = CreateAccDescMOPS(MemOp_LOAD, rprivileged, rnontemporal);
-        // AccessDescriptor waccdesc = CreateAccDescMOPS(MemOp_STORE, wprivileged, wnontemporal);
-        // if stage == MOPSStage_Prologue then
-        // if cpysize<63> == '1' then cpysize = 0x7FFFFFFFFFFFFFFF<63:0>;
-        // if supports_option_a then
-        // nzcv = '0000';
-        // // Copy in the forward direction offsets the arguments.
-        // toaddress = toaddress + cpysize;
-        // fromaddress = fromaddress + cpysize;
-        // cpysize = Zeros(64) - cpysize;
-        // else
-        // nzcv = '0010';
-        // // IMP DEF selection of the amount covered by pre-processing.
-        // stagecpysize = CPYPreSizeChoice(toaddress, fromaddress, cpysize);
-        // assert stagecpysize<63> == cpysize<63> || stagecpysize == Zeros(64);
-        // if SInt(cpysize) > 0 then
-        // assert SInt(stagecpysize) <= SInt(cpysize);
-        // else
-        // assert SInt(stagecpysize) >= SInt(cpysize);
-        // else
-        // boolean zero_size_exceptions = MemCpyZeroSizeCheck();
-        // // Check if this version is consistent with the state of the call.
-        // if zero_size_exceptions || SInt(cpysize) != 0 then
-        // if supports_option_a then
-        // if nzcv<1> == '1' then // PSTATE.C
-        // boolean wrong_option = TRUE;
-        // boolean from_epilogue = stage == MOPSStage_Epilogue;
-        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue,options);
-        // else
-        // if nzcv<1> == '0' then // PSTATE.C
-        // boolean wrong_option = TRUE;
-        // boolean from_epilogue = stage == MOPSStage_Epilogue;
-        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue,
-        // options);
-        // bits(64) postsize = CPYPostSizeChoice(toaddress, fromaddress, cpysize);
-        // assert postsize<63> == cpysize<63> || SInt(postsize) == 0;
-        // if stage == MOPSStage_Main then
-        // stagecpysize = cpysize - postsize;
-        // // Check if the parameters to this instruction are valid.
-        // if MemCpyParametersIllformedM(toaddress, fromaddress, cpysize) then
-        // boolean wrong_option = FALSE;
-        // boolean from_epilogue = FALSE;
-        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue, options);
-        // else
-        // stagecpysize = postsize;
-        // // Check if the parameters to this instruction are valid for the epilogue.
-        // if (cpysize != postsize || MemCpyParametersIllformedE(toaddress, fromaddress, cpysize)) then
-        // boolean wrong_option = FALSE;
-        // boolean from_epilogue = TRUE;
-        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue, options);
-        // if supports_option_a then
-        // while SInt(stagecpysize) != 0 do
-        // // IMP DEF selection of the block size that is worked on. While many
-        // // implementations might make this constant, that is not assumed.
-        // B = CPYSizeChoice(toaddress, fromaddress, cpysize);
-        // assert B <= -1 * SInt(stagecpysize);
-        // readdata<B*8-1:0> = Mem[fromaddress+cpysize, B, raccdesc];
-        // Mem[toaddress+cpysize, B, waccdesc] = readdata<B*8-1:0>;
-        // cpysize = cpysize + B;
-        // stagecpysize = stagecpysize + B;
-        // if stage != MOPSStage_Prologue then
-        // X[n, 64] = cpysize;
-        // else
-        // while UInt(stagecpysize) > 0 do
-        // // IMP DEF selection of the block size that is worked on. While many
-        // // implementations might make this constant, that is not assumed.
-        // B = CPYSizeChoice(toaddress, fromaddress, cpysize);
-        // assert B <= UInt(stagecpysize);
-        // readdata<B*8-1:0> = Mem[fromaddress, B, raccdesc];
-        // Mem[toaddress, B, waccdesc] = readdata<B*8-1:0>;
-        // fromaddress = fromaddress + B;
-        // toaddress = toaddress + B;
-        // cpysize = cpysize - B;
-        // stagecpysize = stagecpysize - B;
-        // if stage != MOPSStage_Prologue then
-        // X[n, 64] = cpysize;
-        // X[d, 64] = toaddress;
-        // X[s, 64] = fromaddress;
-        // if stage == MOPSStage_Prologue then
-        // X[n, 64] = cpysize;
-        // X[d, 64] = toaddress;
-        // X[s, 64] = fromaddress;
-        // PSTATE.<N,Z,C,V> = nzcv;
-    }
-
-macro getCPYFPRNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyfern" \
-    else if op1 == 1 then \
-            "cpyfmrn" \
-        else if op1 == 0 then \
-                "cpyfprn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYFPRN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPRNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b0 1 1 0 0 1%2b 0 %s 1 0 0 0 0 1 %s%s",sz,op1,Rs.image,Rn.image,Rd.image)
-    action = {
-        // if !HaveFeatMOPS() then UNDEFINED;
-        // if sz != '00' then UNDEFINED;
-        // integer d = UInt(Rd);
-        // integer s = UInt(Rs);
-        // integer n = UInt(Rn);
-        // bits(4) options = op2;
-        // MOPSStage stage;
-        // case op1 of
-        // when '00' stage = MOPSStage_Prologue;
-        // when '01' stage = MOPSStage_Main;
-        // when '10' stage = MOPSStage_Epilogue;
-        // otherwise SEE "Memory Copy and Memory Set";
-        // CheckMOPSEnabled();
-        // if s == n || s == d || n == d || d == 31 || s == 31 || n == 31 then
-        // c = ConstrainUnpredictable(Unpredictable_MOPSOVERLAP31);
-        // assert c IN {Constraint_UNDEF, Constraint_NOP};
-        // case c of
-        // when Constraint_UNDEF UNDEFINED;
-        // when Constraint_NOP
-        // EndOfInstruction();
-        // integer N = MaxBlockSizeCopiedBytes();
-        // bits(64) toaddress = X[d, 64];
-        // bits(64) fromaddress = X[s, 64];
-        // bits(64) cpysize = X[n, 64];
-        // bits(4) nzcv = PSTATE.<N,Z,C,V>;
-        // bits(64) stagecpysize;
-
-        // bits(8*N) readdata;
-        // integer B;
-        // boolean supports_option_a = CPYFOptionA();
-        // boolean rprivileged;
-        // boolean wprivileged;
-        // case PSTATE.EL of
-        // when EL0
-        // rprivileged = FALSE;
-        // wprivileged = FALSE;
-        // when EL1
-        // if EL2Enabled() && HaveNVExt() && HCR_EL2.<NV,NV1> == '11' then
-        // rprivileged = TRUE;
-        // wprivileged = TRUE;
-        // else
-        // rprivileged = options<1> == '0';
-        // wprivileged = options<0> == '0';
-        // when EL2
-        // if HaveVirtHostExt() && HCR_EL2.<E2H,TGE> == '11' then
-        // rprivileged = options<1> == '0';
-        // wprivileged = options<0> == '0';
-        // else
-        // rprivileged = TRUE;
-        // wprivileged = TRUE;
-        // when EL3
-        // rprivileged = TRUE;
-        // wprivileged = TRUE;
-        // if HaveUAOExt() && PSTATE.UAO == '1' then
-        // rprivileged = PSTATE.EL != EL0;
-        // wprivileged = PSTATE.EL != EL0;
-        // boolean rnontemporal = options<3> == '1';
-        // boolean wnontemporal = options<2> == '1';
-        // AccessDescriptor raccdesc = CreateAccDescMOPS(MemOp_LOAD, rprivileged, rnontemporal);
-        // AccessDescriptor waccdesc = CreateAccDescMOPS(MemOp_STORE, wprivileged, wnontemporal);
-        // if stage == MOPSStage_Prologue then
-        // if cpysize<63> == '1' then cpysize = 0x7FFFFFFFFFFFFFFF<63:0>;
-        // if supports_option_a then
-        // nzcv = '0000';
-        // // Copy in the forward direction offsets the arguments.
-        // toaddress = toaddress + cpysize;
-        // fromaddress = fromaddress + cpysize;
-        // cpysize = Zeros(64) - cpysize;
-        // else
-        // nzcv = '0010';
-        // // IMP DEF selection of the amount covered by pre-processing.
-        // stagecpysize = CPYPreSizeChoice(toaddress, fromaddress, cpysize);
-        // assert stagecpysize<63> == cpysize<63> || stagecpysize == Zeros(64);
-        // if SInt(cpysize) > 0 then
-        // assert SInt(stagecpysize) <= SInt(cpysize);
-        // else
-        // assert SInt(stagecpysize) >= SInt(cpysize);
-        // else
-        // boolean zero_size_exceptions = MemCpyZeroSizeCheck();
-        // // Check if this version is consistent with the state of the call.
-        // if zero_size_exceptions || SInt(cpysize) != 0 then
-        // if supports_option_a then
-        // if nzcv<1> == '1' then // PSTATE.C
-        // boolean wrong_option = TRUE;
-        // boolean from_epilogue = stage == MOPSStage_Epilogue;
-        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue,options);
-        // else
-        // if nzcv<1> == '0' then // PSTATE.C
-        // boolean wrong_option = TRUE;
-        // boolean from_epilogue = stage == MOPSStage_Epilogue;
-        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue,
-        // options);
-        // bits(64) postsize = CPYPostSizeChoice(toaddress, fromaddress, cpysize);
-        // assert postsize<63> == cpysize<63> || SInt(postsize) == 0;
-        // if stage == MOPSStage_Main then
-        // stagecpysize = cpysize - postsize;
-        // // Check if the parameters to this instruction are valid.
-        // if MemCpyParametersIllformedM(toaddress, fromaddress, cpysize) then
-        // boolean wrong_option = FALSE;
-        // boolean from_epilogue = FALSE;
-        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue, options);
-        // else
-        // stagecpysize = postsize;
-        // // Check if the parameters to this instruction are valid for the epilogue.
-        // if (cpysize != postsize || MemCpyParametersIllformedE(toaddress, fromaddress, cpysize)) then
-        // boolean wrong_option = FALSE;
-        // boolean from_epilogue = TRUE;
-        // MismatchedMemCpyException(supports_option_a, d, s, n, wrong_option, from_epilogue, options);
-        // if supports_option_a then
-        // while SInt(stagecpysize) != 0 do
-        // // IMP DEF selection of the block size that is worked on. While many
-        // // implementations might make this constant, that is not assumed.
-        // B = CPYSizeChoice(toaddress, fromaddress, cpysize);
-        // assert B <= -1 * SInt(stagecpysize);
-        // readdata<B*8-1:0> = Mem[fromaddress+cpysize, B, raccdesc];
-        // Mem[toaddress+cpysize, B, waccdesc] = readdata<B*8-1:0>;
-        // cpysize = cpysize + B;
-        // stagecpysize = stagecpysize + B;
-        // if stage != MOPSStage_Prologue then
-        // X[n, 64] = cpysize;
-        // else
-        // while UInt(stagecpysize) > 0 do
-        // // IMP DEF selection of the block size that is worked on. While many
-        // // implementations might make this constant, that is not assumed.
-        // B = CPYSizeChoice(toaddress, fromaddress, cpysize);
-        // assert B <= UInt(stagecpysize);
-        // readdata<B*8-1:0> = Mem[fromaddress, B, raccdesc];
-        // Mem[toaddress, B, waccdesc] = readdata<B*8-1:0>;
-        // fromaddress = fromaddress + B;
-        // toaddress = toaddress + B;
-        // cpysize = cpysize - B;
-        // stagecpysize = stagecpysize - B;
-        // if stage != MOPSStage_Prologue then
-        // X[n, 64] = cpysize;
-        // X[d, 64] = toaddress;
-        // X[s, 64] = fromaddress;
-        // if stage == MOPSStage_Prologue then
-        // X[n, 64] = cpysize;
-        // X[d, 64] = toaddress;
-        // X[s, 64] = fromaddress;
-        // PSTATE.<N,Z,C,V> = nzcv;
-    }
-
-macro getCPYFPRTVariant(op1) = \
-    if op1 == 2 then \
-        "cpyfert" \
-    else if op1 == 1 then \
-            "cpyfmrt" \
-        else if op1 == 0 then \
-                "cpyfprt" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYFPRT(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPRTVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 0 1 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFE(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfe [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 0 0 0 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYFPRTNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyfertn" \
-    else if op1 == 1 then \
-            "cpyfmrtn" \
-        else if op1 == 0 then \
-                "cpyfprtn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYFPRTN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPRTNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 1 1 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFP(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfp [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 0 0 0 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYFPRTRNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyfertrn" \
-    else if op1 == 1 then \
-            "cpyfmrtrn" \
-        else if op1 == 0 then \
-                "cpyfprtrn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYFPRTRN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPRTRNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 0 1 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFM(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfm [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 0 0 0 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYFPRTWNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyfertwn" \
-    else if op1 == 1 then \
-            "cpyfmrtwn" \
-        else if op1 == 0 then \
-                "cpyfprtwn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYFPRTWN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPRTWNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 1 1 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFEN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfen [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 1 0 0 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYFPTVariant(op1) = \
-    if op1 == 2 then \
-        "cpyfet" \
-    else if op1 == 1 then \
-            "cpyfmt" \
-        else if op1 == 0 then \
-                "cpyfpt" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYFPT(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPTVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 0 1 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFPN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfpn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 1 0 0 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYFPTNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyfetn" \
-    else if op1 == 1 then \
-            "cpyfmtn" \
-        else if op1 == 0 then \
-                "cpyfptn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYFPTN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPTNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 1 1 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFMN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfmn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 1 0 0 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYFPTRNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyfetrn" \
-    else if op1 == 1 then \
-            "cpyfmtrn" \
-        else if op1 == 0 then \
-                "cpyfptrn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYFPTRN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPTRNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 0 1 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFERN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfern [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 0 0 0 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYFPTWNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyfetwn" \
-    else if op1 == 1 then \
-            "cpyfmtwn" \
-        else if op1 == 0 then \
-                "cpyfptwn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYFPTWN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPTWNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 1 1 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFPRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfprn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 0 0 0 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYFPWNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyfewn" \
-    else if op1 == 1 then \
-            "cpyfmwn" \
-        else if op1 == 0 then \
-                "cpyfpwn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYFPWN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPWNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 1 0 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFMRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfmrn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 0 0 0 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYFPWTVariant(op1) = \
-    if op1 == 2 then \
-        "cpyfewt" \
-    else if op1 == 1 then \
-            "cpyfmwt" \
-        else if op1 == 0 then \
-                "cpyfpwt" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYFPWT(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPWTVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 0 0 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFERT(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfert [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 0 1 0 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYFPWTNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyfewtn" \
-    else if op1 == 1 then \
-            "cpyfmwtn" \
-        else if op1 == 0 then \
-                "cpyfpwtn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYFPWTN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPWTNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 1 0 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFPRT(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfprt [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 0 1 0 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYFPWTRNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyfewtn" \
-    else if op1 == 1 then \
-            "cpyfmwtn" \
-        else if op1 == 0 then \
-                "cpyfpwtn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYFPWTRN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPWTRNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 0 0 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFMRT(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfmrt [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 0 1 0 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYFPWTWNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyfewtwn" \
-    else if op1 == 1 then \
-            "cpyfmwtwn" \
-        else if op1 == 0 then \
-                "cpyfpwtwn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYFPWTWN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYFPWTWNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 1 0 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFERTN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfertn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 1 1 0 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYPVariant(op1) = \
-    if op1 == 2 then \
-        "cpye" \
-    else if op1 == 1 then \
-            "cpym" \
-        else if op1 == 0 then \
-                "cpyp" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYP(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 0 0 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFPRTN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfprtn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 1 1 0 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYPNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyen" \
-    else if op1 == 1 then \
-            "cpymn" \
-        else if op1 == 0 then \
-                "cpypn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYPN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 0 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFMRTN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfmrtn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 1 1 0 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYPRNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyern" \
-    else if op1 == 1 then \
-            "cpymrn" \
-        else if op1 == 0 then \
-                "cpyprn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYPRN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPRNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 0 0 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFERTRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfertrn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 0 1 0 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYPRTVariant(op1) = \
-    if op1 == 2 then \
-        "cpyert" \
-    else if op1 == 1 then \
-            "cpymrt" \
-        else if op1 == 0 then \
-                "cpyprt" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYPRT(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPRTVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 0 1 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFPRTRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfprtrn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 0 1 0 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYPRTNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyertn" \
-    else if op1 == 1 then \
-            "cpymrtn" \
-        else if op1 == 0 then \
-                "cpyprtn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYPRTN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPRTNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 1 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFMRTRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfmrtrn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 0 1 0 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYPRTRNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyertrn" \
-    else if op1 == 1 then \
-            "cpymrtrn" \
-        else if op1 == 0 then \
-                "cpyprtrn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYPRTRN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPRTRNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 0 1 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFERTWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfertwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 1 1 0 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYPRTWNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyertwn" \
-    else if op1 == 1 then \
-            "cpymrtwn" \
-        else if op1 == 0 then \
-                "cpyprtwn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYPRTWN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPRTWNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 1 1 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFPRTWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfprtwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 1 1 0 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYPTVariant(op1) = \
-    if op1 == 2 then \
-        "cpyet" \
-    else if op1 == 1 then \
-            "cpymt" \
-        else if op1 == 0 then \
-                "cpypt" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYPT(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPTVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 0 1 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFMRTWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfmrtwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 1 1 0 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYPTNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyetn" \
-    else if op1 == 1 then \
-            "cpymtn" \
-        else if op1 == 0 then \
-                "cpyptn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYPTN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPTNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 1 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFET(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfet [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 0 1 1 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYPTRNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyetrn" \
-    else if op1 == 1 then \
-            "cpymtrn" \
-        else if op1 == 0 then \
-                "cpyptrn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYPTRN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPTRNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 0 1 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFPT(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfpt [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 0 1 1 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYPTWNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyetwn" \
-    else if op1 == 1 then \
-            "cpymtwn" \
-        else if op1 == 0 then \
-                "cpyptwn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYPTWN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPTWNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 1 1 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFMT(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfmt [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 0 1 1 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYPWNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyewn" \
-    else if op1 == 1 then \
-            "cpymwn" \
-        else if op1 == 0 then \
-                "cpypwn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYPWN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPWNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 1 0 0 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFETN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfetn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 1 1 1 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYPWTVariant(op1) = \
-    if op1 == 2 then \
-        "cpyewt" \
-    else if op1 == 1 then \
-            "cpymwt" \
-        else if op1 == 0 then \
-                "cpypwt" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYPWT(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPWTVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 0 0 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFPTN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfptn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 1 1 1 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYPWTNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyewtn" \
-    else if op1 == 1 then \
-            "cpymwtn" \
-        else if op1 == 0 then \
-                "cpypwtn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYPWTN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPWTNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 0 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFMTN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfmtn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 1 1 1 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYPWTRNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyewtrn" \
-    else if op1 == 1 then \
-            "cpymwtrn" \
-        else if op1 == 0 then \
-                "cpypwtrn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYPWTRN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPWTRNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 0 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFETRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfetrn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 0 1 1 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
     action = {
     }
 
-macro getCPYPWTWNVariant(op1) = \
-    if op1 == 2 then \
-        "cpyewtwn" \
-    else if op1 == 1 then \
-            "cpymwtwn" \
-        else if op1 == 0 then \
-                "cpypwtwn" \
-            else \
-                "undefined cpy??" \
-            endif \
-        endif \
-    endif
-
-op CPYPWTWN(sz:u2, op1:u2,Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
-    syntax = format("%s [%s]!, [%s]!, %s!", getCPYPWTWNVariant(op1), get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
-    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 1 0 1 0 1 %s %s",sz,op1,Rs.image,Rn.image,Rd.image)
+op CPYFPTRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfptrn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 0 1 1 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
     action = {
     }
+
+op CPYFMTRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfmtrn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 0 1 1 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYFETWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfetwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 1 1 1 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYFPTWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfptwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 1 1 1 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYFMTWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfmtwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 1 1 1 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYFEWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfewn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 1 0 0 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYFPWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfpwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 1 0 0 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYFMWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfmwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 1 0 0 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYFEWT(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfewt [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 0 0 1 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYFPWT(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfpwt [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 0 0 1 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYFMWT(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfmwt [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 0 0 1 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYFEWTN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfewtn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 1 0 1 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYFPWTN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfpwtn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 1 0 1 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYFMWTN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfmwtn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 1 0 1 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYFEWTRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfewtrn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 0 0 1 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYFPWTRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfpwtrn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 0 0 1 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYFMWTRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfmwtrn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 1 0 0 1 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYFEWTWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfewtwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 1 0 1 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYFPWTWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfpwtwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 1 0 1 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYFMWTWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyfmwtwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 %2b 0 %s 0 1 0 1 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYE(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpye [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 0 0 0 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYP(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyp [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 0 0 0 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYM(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpym [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 0 0 0 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYEN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyen [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 0 0 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYPN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpypn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 0 0 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYMN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpymn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 0 0 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYERN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyern [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 0 0 0 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYPRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyprn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 0 0 0 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYMRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpymrn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 0 0 0 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYERT(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyert [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 0 1 0 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYPRT(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyprt [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 0 1 0 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYMRT(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpymrt [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 0 1 0 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYERTN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyertn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 1 0 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYPRTN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyprtn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 1 0 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYMRTN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpymrtn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 1 0 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYERTRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyertrn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 0 1 0 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYPRTRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyprtrn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 0 1 0 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYMRTRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpymrtrn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 0 1 0 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYERTWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyertwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 1 1 0 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYPRTWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyprtwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 1 1 0 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYMRTWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpymrtwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 1 1 0 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYET(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyet [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 0 1 1 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYPT(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpypt [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 0 1 1 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYMT(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpymt [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 0 1 1 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYETN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyetn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 1 1 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYPTN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyptn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 1 1 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYMTN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpymtn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 1 1 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYETRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyetrn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 0 1 1 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYPTRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyptrn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 0 1 1 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYMTRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpymtrn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 0 1 1 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYETWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyetwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 1 1 1 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYPTWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyptwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 1 1 1 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYMTWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpymtwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 1 1 1 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYEWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyewn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 1 0 0 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYPWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpypwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 1 0 0 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYMWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpymwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 1 0 0 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYEWT(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyewt [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 0 0 1 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYPWT(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpypwt [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 0 0 1 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYMWT(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpymwt [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 0 0 1 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYEWTN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyewtn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 0 1 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYPWTN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpypwtn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 0 1 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYMWTN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpymwtn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 1 0 1 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYEWTRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyewtrn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 0 0 1 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYPWTRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpypwtrn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 0 0 1 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYMWTRN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpymwtrn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 1 0 0 1 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYEWTWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpyewtwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 1 0 1 0 1 %s %s",sz,2,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYPWTWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpypwtwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 1 0 1 0 1 %s %s",sz,0,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
+op CPYMWTWN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("cpymwtwn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 %2b 0 %s 0 1 0 1 0 1 %s %s",sz,1,Rs.image,Rn.image,Rd.image)
+    action = {
+    }
+
 
 op CSDB()
     syntax = "csdb"
@@ -1074,65 +628,20 @@ op LD64B(Rn:REG_INDEX, Rt:REG_INDEX)
     action = {
     }
 
-macro getLDADDBVariante(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldaddab" \
-    else if A == 1 && R == 1 then \
-        "ldaddalb" \
-    else if A == 0 && R == 0 then \
-        "ldaddb" \
-    else if A == 0 && R == 1 then \
-        "ldaddlb" \
-    else "undefined lda??" \
-    endif \
-    endif \
-    endif \
-    endif
-
 op LDADDB(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getLDADDBVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    syntax = format("ldadd%sb %s, %s, [%s]", getAcquireLoadVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
     image = format("0 0 1 1 1 0 0 0 %1b %1b 1 %s 0 0 0 0 0 0 %s%s", A,R,Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-macro getLDADDHVariante(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldaddah" \
-    else if A == 1 && R == 1 then \
-        "ldaddalh" \
-    else if A == 0 && R == 0 then \
-        "ldaddhh" \
-    else if A == 0 && R == 1 then \
-        "ldaddlh" \
-    else "undefined lda??" \
-    endif \
-    endif \
-    endif \
-    endif
-
 op LDADDH(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getLDADDHVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    syntax = format("ldadd%sh %s, %s, [%s]", getAcquireLoadVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
     image = format("0 1 1 1 1 0 0 0 %1b %1b 1 %s 0 0 0 0 0 0 %s%s", A,R,Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-macro getLDADDVariante(A,R) = \
-    if A == 0 && R == 0 then \
-        "ldadd" \
-    else if A == 1 && R == 0 then \
-        "ldadda" \
-    else if A == 1 && R == 1 then \
-        "ldaddal" \
-    else if A == 0 && R == 1 then \
-        "ldaddl" \
-    else "undefined lda??" \
-    endif \
-    endif \
-    endif \
-    endif
-
 op LDADD(sf:u1, A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getLDADDVariante(A,R), get32o64Reg(sf, Rs), get32o64Reg(sf, Rt), get64RegoSP(Rn))
+    syntax = format("ldadd%s %s, %s, [%s]", getAcquireLoadVariante(A,R), get32o64Reg(sf, Rs), get32o64Reg(sf, Rt), get64RegoSP(Rn))
     image = format("1 %1b 1 1 1 0 0 0 %1b %1b 1 %s 0 0 0 0 0 0 %s%s", sf, A,R,Rs.image, Rn.image, Rt.image)
     action = {
     }
@@ -1234,124 +743,51 @@ op LDAXRH(Rn:REG_INDEX, Rt:REG_INDEX)
     action = {
     }
 
-macro getLDCLRBVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldclrab" \
-    else if A == 1 && R == 1 then \
-        "ldclralb" \
-    else if A == 0 && R == 0 then \
-        "ldclrb" \
-    else if A == 0 && R == 1 then \
-        "ldclrlb" \
-    else "undefined ldcl??" \
-    endif endif endif endif
-
 op LDCLRB(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s,%s,[%s]", getLDCLRBVariant(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rt))
+    syntax = format("ldclr%sb %s,%s,[%s]", getAcquireLoadVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rt))
     image = format("0 0 1 1 1 0 0 0 %1b %1b 1 %s 0 0 0 1 0 0 %s%s", A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-macro getLDCLRHVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldclrah" \
-    else if A == 1 && R == 1 then \
-        "ldclralh" \
-    else if A == 0 && R == 0 then \
-        "ldclrh" \
-    else if A == 0 && R == 1 then \
-        "ldclrlh" \
-    else "undefined ldcl??" \
-    endif endif endif endif
-
 op LDCLRH(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s,%s,[%s]", getLDCLRHVariant(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rt))
+    syntax = format("ldclr%sh %s,%s,[%s]", getAcquireLoadVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rt))
     image = format("0 1 1 1 1 0 0 0 %1b %1b 1 %s 0 0 0 1 0 0 %s%s", A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-macro getLDCLRVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldclra" \
-    else if A == 1 && R == 1 then \
-        "ldclral" \
-    else if A == 0 && R == 0 then \
-        "ldclr" \
-    else if A == 0 && R == 1 then \
-        "ldclrl" \
-    else "undefined ldcl??" \
-    endif endif endif endif
-
 op LDCLR(sf:u1, A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s,%s,[%s]", getLDCLRVariant(A,R), get32o64Reg(sf, Rs), get32o64Reg(sf, Rt), get64RegoSP(Rt))
+    syntax = format("ldclr%s %s,%s,[%s]", getAcquireLoadVariante(A,R), get32o64Reg(sf, Rs), get32o64Reg(sf, Rt), get64RegoSP(Rt))
     image = format("1 %1b 1 1 1 0 0 0 %1b %1b 1 %s 0 0 0 1 0 0 %s%s", sf, A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-
-macro getLDEORBVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldeorab" \
-    else if A == 1 && R == 1 then \
-        "ldeoralb" \
-    else if A == 0 && R == 0 then \
-        "ldeorb" \
-    else if A == 0 && R == 1 then \
-        "ldeorlb" \
-    else "undefined ldeor??" \
-    endif endif endif endif
-
 op LDEORB(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s,%s,[%s]", getLDEORBVariant(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rt))
+    syntax = format("ldeor%sb %s,%s,[%s]", getAcquireLoadVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rt))
     image = format("0 0 1 1 1 0 0 0 %1b %1b 1 %s 0 0 1 0 0 0 %s%s", A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-macro getLDEORHVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldeorah" \
-    else if A == 1 && R == 1 then \
-        "ldeoralh" \
-    else if A == 0 && R == 0 then \
-        "ldeorh" \
-    else if A == 0 && R == 1 then \
-        "ldeorlh" \
-    else "undefined ldeor??" \
-    endif endif endif endif
-
 op LDEORH(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s,%s,[%s]", getLDEORHVariant(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rt))
+    syntax = format("ldeor%sh %s,%s,[%s]", getAcquireLoadVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rt))
     image = format("0 1 1 1 1 0 0 0 %1b %1b 1 %s 0 0 1 0 0 0 %s%s", A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-macro getLDEORVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldeora" \
-    else if A == 1 && R == 1 then \
-        "ldeoral" \
-    else if A == 0 && R == 0 then \
-        "ldeor" \
-    else if A == 0 && R == 1 then \
-        "ldeorl" \
-    else "undefined ldeor??" \
-    endif endif endif endif
-
 op LDEOR(sf:u1, A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s,%s,[%s]", getLDEORVariant(A,R), get32o64Reg(sf, Rs), get32o64Reg(sf, Rt), get64RegoSP(Rt))
+    syntax = format("ldeor%s %s,%s,[%s]", getAcquireLoadVariante(A,R), get32o64Reg(sf, Rs), get32o64Reg(sf, Rt), get64RegoSP(Rt))
     image = format("1 %1b 1 1 1 0 0 0 %1b %1b 1 %s 0 0 1 0 0 0 %s%s", sf, A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-op LDG(imm9:u9, Xn:REG_INDEX, Xt:REG_INDEX)
-    syntax = format("ldg %s, [%s,#%d]", get64Reg(Xt), get64RegoSP(Xn), imm9)
-    image = format("1 1 0 1 1 0 0 1 0 1 1 %9b 00 %s%s", imm9, Xn.image, Xt.image)
+op LDG(imm9:u9, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("ldg %s, [%s,#%d]", get64Reg(Rt), get64RegoSP(Rn), imm9)
+    image = format("1 1 0 1 1 0 0 1 0 1 1 %9b 00 %s%s", imm9, Rn.image, Rt.image)
     action = {
     }
 
-op LDGM(Xn:REG_INDEX, Xt:REG_INDEX)
-    syntax = format("ldgm %s, [%s]", get64Reg(Xt), get64RegoSP(Xn))
-    image = format("1 1 0 1 1 0 0 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 %s%s", Xn.image, Xt.image)
+op LDGM(Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("ldgm %s, [%s]", get64Reg(Rt), get64RegoSP(Rn))
+    image = format("1 1 0 1 1 0 0 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 %s%s", Rn.image, Rt.image)
     action = {
     }
 
@@ -1681,356 +1117,99 @@ op LDXRH(Rn:REG_INDEX, Rt:REG_INDEX)
 
 op loads_atomic = LDSETB | LDSETH | LDSET | LDSMAXB | LDSMAXH | LDSMAX | LDSMINB | LDSMINH | LDSMIN | LDUMAXB | LDUMAXH | LDUMAX | LDUMINB | LDUMINH | LDUMIN
 
-macro getLDSETBVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldsetab" \
-    else if A == 1 && R == 1 then \
-        "ldsetalb" \
-    else if A == 0 && R == 0 then \
-        "ldsetb" \
-    else if A == 0 && R == 1 then \
-        "ldsetlb" \
-    else "undefined ldsetb??" \
-    endif endif endif endif
-
 op LDSETB(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getLDSETBVariant(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    syntax = format("ldset%sb %s, %s, [%s]", getAcquireLoadVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
     image = format("0 0 1 1 1 0 0 0 %1b %1b 1 %s 0 0 1 1 0 0 %s%s", A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-macro getLDSETHVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldsetah" \
-    else if A == 1 && R == 1 then \
-        "ldsetalh" \
-    else if A == 0 && R == 0 then \
-        "ldseth" \
-    else if A == 0 && R == 1 then \
-        "ldsetlh" \
-    else "undefined ldseth??" \
-    endif endif endif endif
-
 op LDSETH(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getLDSETHVariant(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    syntax = format("ldset%sh %s, %s, [%s]", getAcquireLoadVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
     image = format("0 1 1 1 1 0 0 0 %1b %1b 1 %s 0 0 1 1 0 0 %s%s", A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-macro getLDSETVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldsetah" \
-    else if A == 1 && R == 1 then \
-        "ldsetalh" \
-    else if A == 0 && R == 0 then \
-        "ldseth" \
-    else if A == 0 && R == 1 then \
-        "ldsetlh" \
-    else "undefined ldset??" \
-    endif endif endif endif
-
 op LDSET(sf:u1,A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getLDSETVariant(A,R), get32o64Reg(sf, Rs), get32o64Reg(sf,Rt), get64RegoSP(Rn))
+    syntax = format("ldset%s %s, %s, [%s]", getAcquireLoadVariante(A,R), get32o64Reg(sf, Rs), get32o64Reg(sf,Rt), get64RegoSP(Rn))
     image = format("1 %1b 1 1 1 0 0 0 %1b %1b 1 %s 0 0 1 1 0 0 %s%s", sf, A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-macro getLDSMAXBVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldsmaxab" \
-    else if A == 1 && R == 1 then \
-        "ldsmaxalb" \
-    else if A == 0 && R == 0 then \
-        "ldsmaxb" \
-    else if A == 0 && R == 1 then \
-        "ldsmaxalb" \
-    else "undefined ldsmaxb??" \
-    endif endif endif endif
-
 op LDSMAXB(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getLDSMAXBVariant(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    syntax = format("ldsmax%sb %s, %s, [%s]", getAcquireLoadVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
     image = format("0 0 1 1 1 0 0 0 %1b %1b 1 %s 0 1 0 0 0 0 %s%s", A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-macro getLDSMAXHVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldsmaxah" \
-    else if A == 1 && R == 1 then \
-        "ldsmaxalh" \
-    else if A == 0 && R == 0 then \
-        "ldsmaxh" \
-    else if A == 0 && R == 1 then \
-        "ldsmaxalh" \
-    else "undefined ldsmaxh??" \
-    endif endif endif endif
-
 op LDSMAXH(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getLDSMAXHVariant(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    syntax = format("ldsmax%sh %s, %s, [%s]", getAcquireLoadVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
     image = format("0 1 1 1 1 0 0 0 %1b %1b 1 %s 0 1 0 0 0 0 %s%s", A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-macro getLDSMAXVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldsmaxa" \
-    else if A == 1 && R == 1 then \
-        "ldsmaxal" \
-    else if A == 0 && R == 0 then \
-        "ldsmax" \
-    else if A == 0 && R == 1 then \
-        "ldsmaxl" \
-    else "undefined ldsmax??" \
-    endif endif endif endif
-
 op LDSMAX(sf:u1,A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getLDSMAXVariant(A,R), get32o64Reg(sf, Rs), get32o64Reg(sf,Rt), get64RegoSP(Rn))
+    syntax = format("ldsmax%s %s, %s, [%s]", getAcquireLoadVariante(A,R), get32o64Reg(sf, Rs), get32o64Reg(sf,Rt), get64RegoSP(Rn))
     image = format("1 %1b 1 1 1 0 0 0 %1b %1b 1 %s 0 1 0 0 0 0 %s%s", sf, A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-macro getLDSMINBVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldsminab" \
-    else if A == 1 && R == 1 then \
-        "ldsminalb" \
-    else if A == 0 && R == 0 then \
-        "ldsminb" \
-    else if A == 0 && R == 1 then \
-        "ldsminalb" \
-    else "undefined ldsminb??" \
-    endif endif endif endif
-
 op LDSMINB(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getLDSMINBVariant(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    syntax = format("ldsmin%sb %s, %s, [%s]", getAcquireLoadVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
     image = format("0 0 1 1 1 0 0 0 %1b %1b 1 %s 0 1 0 1 0 0 %s%s", A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-macro getLDSMINHVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldsminah" \
-    else if A == 1 && R == 1 then \
-        "ldsminalh" \
-    else if A == 0 && R == 0 then \
-        "ldsminh" \
-    else if A == 0 && R == 1 then \
-        "ldsminalh" \
-    else "undefined ldsminh??" \
-    endif endif endif endif
-
 op LDSMINH(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getLDSMINHVariant(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    syntax = format("ldsmin%sh %s, %s, [%s]", getAcquireLoadVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
     image = format("0 1 1 1 1 0 0 0 %1b %1b 1 %s 0 1 0 1 0 0 %s%s", A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-macro getLDSMINVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldsmina" \
-    else if A == 1 && R == 1 then \
-        "ldsminal" \
-    else if A == 0 && R == 0 then \
-        "ldsmin" \
-    else if A == 0 && R == 1 then \
-        "ldsminl" \
-    else "undefined ldsmin??" \
-    endif endif endif endif
-
 op LDSMIN(sf:u1,A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getLDSMINVariant(A,R), get32o64Reg(sf, Rs), get32o64Reg(sf,Rt), get64RegoSP(Rn))
+    syntax = format("ldsmin%s %s, %s, [%s]", getAcquireLoadVariante(A,R), get32o64Reg(sf, Rs), get32o64Reg(sf,Rt), get64RegoSP(Rn))
     image = format("1 %1b 1 1 1 0 0 0 %1b %1b 1 %s 0 1 0 1 0 0 %s%s", sf, A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-
-macro getLDUMAXBVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldumaxab" \
-    else if A == 1 && R == 1 then \
-        "ldumaxalb" \
-    else if A == 0 && R == 0 then \
-        "ldumaxb" \
-    else if A == 0 && R == 1 then \
-        "ldumaxalb" \
-    else "undefined ldumaxb??" \
-    endif endif endif endif
-
 op LDUMAXB(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getLDUMAXBVariant(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    syntax = format("ldumax%sb %s, %s, [%s]", getAcquireLoadVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
     image = format("0 0 1 1 1 0 0 0 %1b %1b 1 %s 0 1 1 0 0 0 %s%s", A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-macro getLDUMAXHVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldumaxah" \
-    else if A == 1 && R == 1 then \
-        "ldumaxalh" \
-    else if A == 0 && R == 0 then \
-        "ldumaxh" \
-    else if A == 0 && R == 1 then \
-        "ldumaxalh" \
-    else "undefined ldumaxh??" \
-    endif endif endif endif
-
 op LDUMAXH(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getLDUMAXHVariant(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    syntax = format("ldumax%sh %s, %s, [%s]", getAcquireLoadVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
     image = format("0 1 1 1 1 0 0 0 %1b %1b 1 %s 0 1 1 0 0 0 %s%s", A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-macro getLDUMAXVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldumaxa" \
-    else if A == 1 && R == 1 then \
-        "ldumaxal" \
-    else if A == 0 && R == 0 then \
-        "ldumax" \
-    else if A == 0 && R == 1 then \
-        "ldumaxl" \
-    else "undefined ldumax??" \
-    endif endif endif endif
-
 op LDUMAX(sf:u1,A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getLDUMAXVariant(A,R), get32o64Reg(sf, Rs), get32o64Reg(sf,Rt), get64RegoSP(Rn))
+    syntax = format("ldumax%s %s, %s, [%s]", getAcquireLoadVariante(A,R), get32o64Reg(sf, Rs), get32o64Reg(sf,Rt), get64RegoSP(Rn))
     image = format("1 %1b 1 1 1 0 0 0 %1b %1b 1 %s 0 1 1 0 0 0 %s%s", sf, A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-macro getLDUMINBVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "lduminab" \
-    else if A == 1 && R == 1 then \
-        "lduminalb" \
-    else if A == 0 && R == 0 then \
-        "lduminb" \
-    else if A == 0 && R == 1 then \
-        "lduminalb" \
-    else "undefined lduminb??" \
-    endif endif endif endif
-
 op LDUMINB(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getLDUMINBVariant(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    syntax = format("ldumin%sb %s, %s, [%s]", getAcquireLoadVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
     image = format("0 0 1 1 1 0 0 0 %1b %1b 1 %s 0 1 1 1 0 0 %s%s", A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-macro getLDUMINHVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "lduminah" \
-    else if A == 1 && R == 1 then \
-        "lduminalh" \
-    else if A == 0 && R == 0 then \
-        "lduminh" \
-    else if A == 0 && R == 1 then \
-        "lduminalh" \
-    else "undefined lduminh??" \
-    endif endif endif endif
-
 op LDUMINH(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getLDUMINHVariant(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    syntax = format("ldumin%sh %s, %s, [%s]", getAcquireLoadVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
     image = format("0 1 1 1 1 0 0 0 %1b %1b 1 %s 0 1 1 1 0 0 %s%s", A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
-macro getLDUMINVariant(A,R) = \
-    if A == 1 && R == 0 then \
-        "ldumina" \
-    else if A == 1 && R == 1 then \
-        "lduminal" \
-    else if A == 0 && R == 0 then \
-        "ldumin" \
-    else if A == 0 && R == 1 then \
-        "lduminl" \
-    else "undefined ldumin??" \
-    endif endif endif endif
-
 op LDUMIN(sf:u1,A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
-    syntax = format("%s %s, %s, [%s]", getLDUMINVariant(A,R), get32o64Reg(sf, Rs), get32o64Reg(sf,Rt), get64RegoSP(Rn))
+    syntax = format("ldumin%s %s, %s, [%s]", getAcquireLoadVariante(A,R), get32o64Reg(sf, Rs), get32o64Reg(sf,Rt), get64RegoSP(Rn))
     image = format("1 %1b 1 1 1 0 0 0 %1b %1b 1 %s 0 1 1 1 0 0 %s%s", sf, A, R, Rs.image, Rn.image, Rt.image)
     action = {
     }
 
 //---------------------------------------------------------------------------------------------------
 
-op other_mem = PACDA | PACDB | PACGA | PACIA | PACIAVariante | PACIB | PACIBVariante | PRFM_immediate | PRFM_register | PRFUM | PSBCSYNC
-
-op PACDA(Z:u1, Rn:REG_INDEX, Rd:REG_INDEX)
-    syntax = if Z == 1 && Rn == 31 then 
-                format("pacdza %s", get64Reg(Rd)) 
-            else 
-                format("pacda %s, %s", get64Reg(Rd), get64RegoSP(Rn)) 
-            endif
-    image = format("1 1 0 1 1 0 1 0 1 1 0 0 0 0 0 1 0 0 %1b 0 1 0 %s%s", Z, Rn, Rd)
-    action = {
-    }
-
-op PACDB(Z:u1, Rn:REG_INDEX, Rd:REG_INDEX)
-    syntax = if Z == 1 && Rn == 31 then 
-                format("pacdzb %s", get64Reg(Rd)) 
-            else 
-                format("pacdb %s, %s", get64Reg(Rd), get64RegoSP(Rn)) 
-            endif
-    image = format("1 1 0 1 1 0 1 0 1 1 0 0 0 0 0 1 0 0 %1b 0 1 1 %s%s", Z, Rn, Rd)
-    action = {
-    }
-
-op PACGA(Rm:REG_INDEX, Rn:REG_INDEX, Rd:REG_INDEX)
-    syntax = format("pacga %s, %s, %s", get64Reg(Rd), get64Reg(Rn), get64RegoSP(Rm))
-    image = format("1 0 0 1 1 0 1 0 1 1 0 %s 0 0 1 1 0 0 %s%s", Rm.image, Rn.image, Rd.image)
-    action = {
-    }
-
-op PACIA(Z:u1, Rn:REG_INDEX, Rd:REG_INDEX)
-    syntax = if Z == 1 && Rn == 31 then 
-                format("paciza %s", get64Reg(Rd)) 
-            else 
-                format("pacia %s, %s", get64Reg(Rd), get64RegoSP(Rn)) 
-            endif
-    image = format("1 1 0 1 1 0 1 0 1 1 0 0 0 0 0 1 0 0 %1b 0 0 0 %s%s", Z, Rn, Rd)
-    action = {
-    }
-
-macro getPACIAVariante(CRm, op2) = \
-    if CRm == 0 && op2 == 0 then \
-        "pacia1716" \
-    else if CRm == 1 && op2 == 1 then \
-        "paciasp" \
-    else if CRm == 1 && op2 == 0 then \
-        "paciaz" \
-    else "undefined pacia??" \
-    endif endif endif
-
-op PACIAVariante(CRm:u1, op2:u1)
-    syntax = format("%s", getPACIAVariante(CRm, op2))
-    image = format("1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 0 0 0 %1b 1 0 0 %1b 1 1 1 1 1", CRm, op2)
-    action = {}
-
-op PACIB(Z:u1, Rn:REG_INDEX, Rd:REG_INDEX)
-    syntax = if Z == 1 && Rn == 31 then 
-                format("pacizb %s", get64Reg(Rd)) 
-            else 
-                format("pacib %s, %s", get64Reg(Rd), get64RegoSP(Rn)) 
-            endif
-    image = format("1 1 0 1 1 0 1 0 1 1 0 0 0 0 0 1 0 0 %1b 0 0 1 %s%s", Z, Rn, Rd)
-    action = {
-    }
-
-macro getPACIBVariante(CRm, op2) = \
-    if CRm == 0 && op2 == 0 then \
-        "pacib1716" \
-    else if CRm == 1 && op2 == 1 then \
-        "pacibsp" \
-    else if CRm == 1 && op2 == 0 then \
-        "pacibz" \
-    else "undefined pacib??" \
-    endif endif endif
-
-op PACIBVariante(CRm:u1, op2:u1)
-    syntax = format("%s", getPACIBVariante(CRm, op2))
-    image = format("1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 0 0 0 %1b 1 0 1 %1b 1 1 1 1 1", CRm, op2)
-    action = {}
+op other_mem = PRFM_immediate | PRFM_register | PRFUM | PSBCSYNC | SB | SBC | SETGE|SETGP|SETGM|SETGEN|SETGPN|SETGMN|SETGET|SETGPT|SETGMT|SETGETN|SETGPTN|SETGMTN|SETE|SETP|SETM|SETEN|SETPN|SETMN|SETET|SETPT|SETMT|SETETN|SETPTN|SETMTN | ST2G_postindex | ST2G_preindex | ST2G_signedoffset | STG_postindex | STG_preindex | STG_signedoffset | STGP_postindex | STGP_preindex | STGP_signedoffset | STR_imm_postindex | STR_imm_preindex | STR_imm_unsignedoffset | STR_reg | STP_postindex | STP_preindex | STP_signedoffset | STRB_imm_postindex | STRB_imm_preindex | STRB_imm_unsignedoffset | STRB_reg | STRH_imm_postindex | STRH_imm_preindex | STRH_imm_unsignedoffset | STRH_reg
 
 op PRFM_immediate(imm12:u12, Rn:REG_INDEX, imm5:u5)
     syntax = format("prfm #%d,[%s,%d]", imm5, get64RegoSP(Rn), imm12)
@@ -2056,35 +1235,537 @@ op PSBCSYNC()
     action = {
     }
 
+op SB()
+    syntax = "sb"
+    image = "1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 1 0 0 0 0 1 1 1 1 1 1 1 1"
+    action = {
+    }
 
+op SBC(sf:u1, Rm:REG_INDEX, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("sbc %s, %s, %s", get32o64Reg(sf, Rd), get32o64Reg(sf, Rn), get32o64Reg(sf, Rm))
+    image = format("%1b 1 0 1 1 0 1 0 0 0 0 %s 0 0 0 0 0 0 %s %s", sf, Rm.image, Rn.image, Rd.image)
+    action = {
+    }
 
+op SETGE(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setge [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 1 1 0 %s %2b 0 0 0 1 %s%s",sz,Rs.image, 2,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETGP(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setgp [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 1 1 0 %s %2b 0 0 0 1 %s%s",sz,Rs.image, 0,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETGM(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setgm [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 1 1 0 %s %2b 0 0 0 1 %s%s",sz,Rs.image,1,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETGEN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setgen [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 1 1 0 %s %2b 1 0 0 1 %s%s",sz,Rs.image, 2,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETGPN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setgpn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 1 1 0 %s %2b 1 0 0 1 %s%s",sz,Rs.image, 0,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETGMN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setgmn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 1 1 0 %s %2b 1 0 0 1 %s%s",sz,Rs.image,1,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETGET(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setget [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 1 1 0 %s %2b 0 1 0 1 %s%s",sz,Rs.image, 2,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETGPT(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setgpt [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 1 1 0 %s %2b 0 1 0 1 %s%s",sz,Rs.image, 0,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETGMT(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setgmt [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 1 1 0 %s %2b 0 1 0 1 %s%s",sz,Rs.image,1,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETGETN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setgetn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 1 1 0 %s %2b 1 1 0 1 %s%s",sz,Rs.image, 2,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETGPTN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setgptn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 1 1 0 %s %2b 1 1 0 1 %s%s",sz,Rs.image, 0,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETGMTN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setgmtn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 1 0 1 1 1 0 %s %2b 1 1 0 1 %s%s",sz,Rs.image,1,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETE(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("sete [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 1 1 0 %s %2b 0 0 0 1 %s%s",sz,Rs.image, 2,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETP(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setp [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 1 1 0 %s %2b 0 0 0 1 %s%s",sz,Rs.image, 0,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETM(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setm [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 1 1 0 %s %2b 0 0 0 1 %s%s",sz,Rs.image,1,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETEN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("seten [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 1 1 0 %s %2b 1 0 0 1 %s%s",sz,Rs.image, 2,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETPN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setpn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 1 1 0 %s %2b 1 0 0 1 %s%s",sz,Rs.image, 0,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETMN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setmn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 1 1 0 %s %2b 1 0 0 1 %s%s",sz,Rs.image,1,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETET(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setet [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 1 1 0 %s %2b 0 1 0 1 %s%s",sz,Rs.image, 2,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETPT(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setpt [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 1 1 0 %s %2b 0 1 0 1 %s%s",sz,Rs.image, 0,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETMT(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setmt [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 1 1 0 %s %2b 0 1 0 1 %s%s",sz,Rs.image,1,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETETN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setetn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 1 1 0 %s %2b 1 1 0 1 %s%s",sz,Rs.image, 2,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETPTN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setptn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 1 1 0 %s %2b 1 1 0 1 %s%s",sz,Rs.image, 0,Rn.image,Rd.image)
+    action = {
+    }
 
+op SETMTN(sz:u2, Rs:REG_INDEX,Rn:REG_INDEX,Rd:REG_INDEX)
+    syntax = format("setmtn [%s]!, [%s]!, %s!", get64Reg(Rd), get64Reg(Rs), get64Reg(Rn))
+    image = format("%2b 0 1 1 0 0 1 1 1 0 %s %2b 1 1 0 1 %s%s",sz,Rs.image,1,Rn.image,Rd.image)
+    action = {
+    }
 
+op ST2G_postindex(imm9:s9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("st2g %s, [%s], #%d", get64RegoSP(Rt), get64RegoSP(Rn), imm9)
+    image = format("1 1 0 1 1 0 0 1 1 0 1 %9b 0 1 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
 
+op ST2G_preindex(imm9:s9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("st2g %s, [%s, #%d]!", get64RegoSP(Rt), get64RegoSP(Rn), imm9)
+    image = format("1 1 0 1 1 0 0 1 1 0 1 %9b 1 1 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+    
+op ST2G_signedoffset(imm9:s9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("st2g %s, [%s, #%d]", get64RegoSP(Rt), get64RegoSP(Rn), imm9)
+    image = format("1 1 0 1 1 0 0 1 1 0 1 %9b 1 0 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
 
+op STG_postindex(imm9:s9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stg %s, [%s], #%d", get64RegoSP(Rt), get64RegoSP(Rn), imm9)
+    image = format("1 1 0 1 1 0 0 1 0 0 1 %9b 0 1 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
 
+op STG_preindex(imm9:s9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stg %s, [%s, #%d]!", get64RegoSP(Rt), get64RegoSP(Rn), imm9)
+    image = format("1 1 0 1 1 0 0 1 0 0 1 %9b 1 1 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+    
+op STG_signedoffset(imm9:s9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stg %s, [%s, #%d]", get64RegoSP(Rt), get64RegoSP(Rn), imm9)
+    image = format("1 1 0 1 1 0 0 1 0 0 1 %9b 1 0 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op STGP_postindex(imm7:s7, Rt:REG_INDEX, Rt2:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stgp %s, %s, [%s], #%d", get64Reg(Rt), get64Reg(Rt2), get64RegoSP(Rn), imm7)
+    image = format("0 1 1 0 1 0 0 0 1 0 %7b %s %s %s", imm7, Rt2.image, Rn.image, Rt.image)
+    action = {
+    }
+
+op STGP_preindex(imm7:s7, Rt:REG_INDEX, Rt2:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stgp %s, %s, [%s, #%d]!", get64Reg(Rt), get64Reg(Rt2), get64RegoSP(Rn), imm7)
+    image = format("0 1 1 0 1 0 0 1 1 0 %7b %s %s %s", imm7, Rt2.image, Rn.image, Rt.image)
+    action = {
+    }
+    
+op STGP_signedoffset(imm7:s7, Rt:REG_INDEX, Rt2:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stgp %s, %s, [%s, #%d]", get64Reg(Rt), get64Reg(Rt2), get64RegoSP(Rn), imm7)
+    image = format("0 1 1 0 1 0 0 1 0 0 %7b %s %s %s", imm7, Rt2.image, Rn.image, Rt.image)
+    action = {
+    }
+
+op STP_postindex(sf:u1, imm7:s7, Rt:REG_INDEX, Rt2:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stp %s, %s, [%s], #%d", get32o64Reg(sf, Rt), get32o64Reg(sf, Rt2), get64RegoSP(Rn), imm7)
+    image = format("%1b 0 1 0 1 0 0 0 1 0 %7b %s %s %s", sf, imm7, Rt2.image, Rn.image, Rt.image)
+    action = {
+    }
+
+op STP_preindex(sf:u1, imm7:s7, Rt:REG_INDEX, Rt2:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stp %s, %s, [%s, #%d]!", get32o64Reg(sf, Rt), get32o64Reg(sf, Rt2), get64RegoSP(Rn), imm7)
+    image = format("%1b 0 1 0 1 0 0 1 1 0 %7b %s %s %s", sf, imm7, Rt2.image, Rn.image, Rt.image)
+    action = {
+    }
+    
+op STP_signedoffset(sf:u1, imm7:s7, Rt:REG_INDEX, Rt2:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stp %s, %s, [%s, #%d]", get32o64Reg(sf, Rt), get32o64Reg(sf, Rt2), get64RegoSP(Rn), imm7)
+    image = format("%1b 0 1 0 1 0 0 1 0 0 %7b %s %s %s", sf, imm7, Rt2.image, Rn.image, Rt.image)
+    action = {
+    }
+
+op STR_imm_postindex(sf:u1, imm9:s9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("str %s, [%s], #%d", get32o64Reg(sf, Rt), get64RegoSP(Rn), imm9)
+    image = format("1 %1b 1 1 1 0 0 0 0 0 0 %9b 0 1 %s %s", sf, imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op STR_imm_preindex(sf:u1, imm9:s9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("str %s, [%s, #%d]!", get32o64Reg(sf, Rt), get64RegoSP(Rn), imm9)
+    image = format("1 %1b 1 1 1 0 0 0 0 0 0 %9b 1 1 %s %s", sf, imm9, Rn.image, Rt.image)
+    action = {
+    }
+    
+op STR_imm_unsignedoffset(sf:u1, imm12:u12, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("str %s, [%s, #%d]", get32o64Reg(sf, Rt), get64RegoSP(Rn), imm12)
+    image = format("1 %1b 1 1 1 0 0 1 0 0 %12b %s %s", sf, imm12, Rn.image, Rt.image)
+    action = {
+    }
+
+op STR_reg(sf:u1, Rm:REG_INDEX, option:u3, S:u1, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("str %s, [%s, %s%s]", get32o64Reg(sf, Rt), get64RegoSP(Rn), get32o64Reg(option<0..0>, Rm), extend(option, S))
+    image = format("1 %1b 1 1 1 0 0 0 0 0 1 %s %3b %1b 1 0 %s%s", sf, Rm.image, option, S, Rn.image, Rt.image)
+    action = {
+    }
+
+op STRB_imm_postindex(imm9:s9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("strb %s, [%s], #%d", get32Reg(Rt), get64RegoSP(Rn), imm9)
+    image = format("0 0 1 1 1 0 0 0 0 0 0 %9b 0 1 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op STRB_imm_preindex(imm9:s9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("strb %s, [%s, #%d]!", get64Reg(Rt), get64RegoSP(Rn), imm9)
+    image = format("0 0 1 1 1 0 0 0 0 0 0 %9b 1 1 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+    
+op STRB_imm_unsignedoffset(imm12:u12, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("strb %s, [%s, #%d]", get32Reg(Rt), get64RegoSP(Rn), imm12)
+    image = format("0 0 1 1 1 0 0 1 0 0 %12b %s %s", imm12, Rn.image, Rt.image)
+    action = {
+    }
+
+op STRB_reg(Rm:REG_INDEX, option:u3, S:u1, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("strb %s, [%s, %s%s]", get32Reg(Rt), get64RegoSP(Rn), get32o64Reg(option<0..0>, Rm), extend(option, S))
+    image = format("0 0 1 1 1 0 0 0 0 0 1 %s %3b %1b 1 0 %s%s", Rm.image, option, S, Rn.image, Rt.image)
+    action = {
+    }
+
+op STRH_imm_postindex(imm9:s9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("strh %s, [%s], #%d", get32Reg(Rt), get64RegoSP(Rn), imm9)
+    image = format("0 1 1 1 1 0 0 0 0 0 0 %9b 0 1 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op STRH_imm_preindex(imm9:s9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("strh %s, [%s, #%d]!", get64Reg(Rt), get64RegoSP(Rn), imm9)
+    image = format("0 1 1 1 1 0 0 0 0 0 0 %9b 1 1 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+    
+op STRH_imm_unsignedoffset(imm12:u12, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("strh %s, [%s, #%d]", get32Reg(Rt), get64RegoSP(Rn), imm12)
+    image = format("0 1 1 1 1 0 0 1 0 0 %12b %s %s", imm12, Rn.image, Rt.image)
+    action = {
+    }
+
+op STRH_reg(Rm:REG_INDEX, option:u3, S:u1, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("strh %s, [%s, %s%s]", get32Reg(Rt), get64RegoSP(Rn), get32o64Reg(option<0..0>, Rm), extend(option, S))
+    image = format("0 1 1 1 1 0 0 0 0 0 1 %s %3b %1b 1 0 %s%s", Rm.image, option, S, Rn.image, Rt.image)
+    action = {
+    }
+
+//----------------------------------------------------------------------------------------
+
+op store_atomics =  ST64B | ST64BV | ST64BV0 | STGP | STLLRB | STLLRH | STLLR | STLRB | STLRH | STLR | STLURB | STLURH | STLUR | STLXP | STLXRB | STLXRH | STLXR | STNP | STTR | STTRB | STTRH | STUR | STURB | STURH | STXP | STXR | STXRB | STXRH | STZ2G_postindex | STZ2G_preindex | STZ2G_signedoffset | STZG_postindex | STZG_preindex | STZG_signedoffset | STZGM | SWP | SWPB | SWPH
+
+op ST64B(Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("st64b %s, [%s]", get64Reg(Rt), get64RegoSP(Rn))
+    image = format("1 1 1 1 1 0 0 0 0 0 1 1 1 1 1 1 1 0 0 1 0 0 %s%s", Rn.image, Rt.image)
+    action = {
+    }
+
+op ST64BV(Rt:REG_INDEX, Rn:REG_INDEX, Rs:REG_INDEX)
+    syntax = format("st64bv %s, %s, [%s]", get64Reg(Rs), get64Reg(Rt), get64RegoSP(Rn))
+    image = format("1 1 1 1 1 0 0 0 0 0 1 %s 1 0 1 1 0 0 %s%s", Rs.image, Rn.image,Rt.image)
+    action = {
+    }
+
+op ST64BV0(Rt:REG_INDEX, Rn:REG_INDEX, Rs:REG_INDEX)
+    syntax = format("st64bv0 %s, %s, [%s]", get64Reg(Rs), get64Reg(Rt), get64RegoSP(Rn))
+    image = format("1 1 1 1 1 0 0 0 0 0 1 %s 1 0 1 0 0 0 %s%s", Rs.image, Rn.image,Rt.image)
+    action = {
+    }
+
+op STGP(Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stgm %s, [%s]", get64Reg(Rt), get64RegoSP(Rn))
+    image = format("1 1 0 1 1 0 0 1 1 0 1 0 0 0 0 0 0 0 0 0 0 0 %s %s", Rn.image, Rt.image)
+    action = {
+    }
+
+op STLLRB(Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stllrb %s, [%s]", get32Reg(Rt), get64RegoSP(Rn))
+    image = format("0 0 0 0 1 0 0 0 1 0 0 1 1 1 1 1 0 1 1 1 1 1 %s %s", Rn.image, Rt.image)
+    action = {
+    }
+
+op STLLRH(Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stllrh %s, [%s]", get32Reg(Rt), get64RegoSP(Rn))
+    image = format("0 1 0 0 1 0 0 0 1 0 0 1 1 1 1 1 0 1 1 1 1 1 %s %s", Rn.image, Rt.image)
+    action = {
+    }
+
+op STLLR(sf:u1, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stllr %s, [%s]", get32Reg(Rt), get64RegoSP(Rn))
+    image = format("1 %1b 0 0 1 0 0 0 1 0 0 1 1 1 1 1 0 1 1 1 1 1 %s %s", sf, Rn.image, Rt.image)
+    action = {
+    }
+
+op STLRB(Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stlrb %s, [%s]", get32Reg(Rt), get64RegoSP(Rn))
+    image = format("0 0 0 0 1 0 0 0 1 0 0 1 1 1 1 1 1 1 1 1 1 1 %s %s", Rn.image, Rt.image)
+    action = {
+    }
+
+op STLRH(Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stlrh %s, [%s]", get32Reg(Rt), get64RegoSP(Rn))
+    image = format("0 1 0 0 1 0 0 0 1 0 0 1 1 1 1 1 1 1 1 1 1 1 %s %s", Rn.image, Rt.image)
+    action = {
+    }
+
+op STLR(sf:u1, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stlr %s, [%s]", get32o64Reg(sf, Rt), get64RegoSP(Rn))
+    image = format("1 %1b 0 0 1 0 0 0 1 0 0 1 1 1 1 1 1 1 1 1 1 1 %s %s", sf, Rn.image, Rt.image)
+    action = {
+    }
+
+op STLURB( imm9:u9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stlurb %s, [%s, #%d]", get32Reg(Rt), get64RegoSP(Rn), imm9)
+    image = format("0 0 0 1 1 0 0 1 0 0 0 %9b 0 0 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op STLURH( imm9:u9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stlurh %s, [%s, #%d]", get32Reg(Rt), get64RegoSP(Rn), imm9)
+    image = format("0 1 0 1 1 0 0 1 0 0 0 %9b 0 0 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op STLUR(sf:u1, imm9:u9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stlur %s, [%s, #%d]", get32o64Reg(sf, Rt), get64RegoSP(Rn), imm9)
+    image = format("1 %1b 0 1 1 0 0 1 0 0 0 %9b 0 0 %s %s", sf, imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op STLXP(sf:u1, Rs:REG_INDEX, Rt:REG_INDEX, Rt2:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stlxp %s, %s, %s, [%s]", get32o64Reg(sf,Rs), get32o64Reg(sf, Rt), get32o64Reg(sf, Rt2), get64RegoSP(Rn))
+    image = format("1 %1b 0 0 1 0 0 0 0 0 1 %s 1 %s %s %s", sf, Rs.image, Rt2.image, Rn.image, Rt.image)
+    action = {
+    }
+
+op STLXRB(Rs:REG_INDEX, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stlxrb %s, %s, [%s]", get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    image = format("0 0 0 0 1 0 0 0 0 0 0 %s 1 1 1 1 1 1 %s %s", Rs.image, Rn.image, Rt.image)
+    action = {
+    }
+
+op STLXRH(Rs:REG_INDEX, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stlxrh %s, %s, [%s]", get32Reg(Rt), get32Reg(Rt), get64RegoSP(Rn))
+    image = format("0 1 0 0 1 0 0 0 0 0 0 %s 1 1 1 1 1 1 %s %s", Rs.image, Rn.image, Rt.image)
+    action = {
+    }
+
+op STLXR(sf:u1, Rs:REG_INDEX, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stlxr %s, %s, [%s]", get32o64Reg(sf, Rs), get32o64Reg(sf, Rt), get64RegoSP(Rn))
+    image = format("1 %1b 0 0 1 0 0 0 0 0 0 %s 1 1 1 1 1 1 %s %s", sf, Rs.image, Rn.image, Rt.image)
+    action = {
+    }
+
+op STNP(sf:u1, imm7:u7, Rt2:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("stnp %s, %s, [%s, #%d]", get32o64Reg(sf, Rt), get32o64Reg(sf, Rt2), get64RegoSP(Rn), imm7)
+    image = format("%1b 0 1 0 1 0 0 0 0 0 %7b %s %s %s", sf, imm7, Rt2.image, Rn.image, Rt.image)
+    action = {
+    }
+
+op STTRB( imm9:u9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("sttrb %s, [%s, #%d]", get32Reg(Rt), get64RegoSP(Rn), imm9)
+    image = format("0 0 1 1 1 0 0 0 0 0 0 %9b 1 0 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op STTRH( imm9:u9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("sttrh %s, [%s, #%d]", get32Reg(Rt), get64RegoSP(Rn), imm9)
+    image = format("0 1 1 1 1 0 0 0 0 0 0 %9b 1 0 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op STTR(sf:u1, imm9:u9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("sttr %s, [%s, #%d]", get32o64Reg(sf, Rt), get64RegoSP(Rn), imm9)
+    image = format("1 %1b 1 1 1 0 0 0 0 0 0 %9b 1 0 %s %s", sf, imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op STURB( imm9:u9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("sturb %s, [%s, #%d]", get32Reg(Rt), get64RegoSP(Rn), imm9)
+    image = format("0 0 1 1 1 0 0 0 0 0 0 %9b 0 0 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op STURH( imm9:u9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("sturh %s, [%s, #%d]", get32Reg(Rt), get64RegoSP(Rn), imm9)
+    image = format("0 1 1 1 1 0 0 0 0 0 0 %9b 0 0 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op STUR(sf:u1, imm9:u9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stur %s, [%s, #%d]", get32o64Reg(sf, Rt), get64RegoSP(Rn), imm9)
+    image = format("1 %1b 1 1 1 0 0 0 0 0 0 %9b 0 0 %s %s", sf, imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op STXP(sf:u1, Rs:REG_INDEX, Rt:REG_INDEX, Rt2:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stxp %s, %s, %s, [%s]", get32o64Reg(sf,Rs), get32o64Reg(sf, Rt), get32o64Reg(sf, Rt2), get64RegoSP(Rn))
+    image = format("1 %1b 0 0 1 0 0 0 0 0 1 %s 0 %s %s %s", sf, Rs.image, Rt2.image, Rn.image, Rt.image)
+    action = {
+    }
+
+op STXRB(Rs:REG_INDEX, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stxrb %s, %s, [%s]", get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    image = format("0 0 0 0 1 0 0 0 0 0 0 %s 0 1 1 1 1 1 %s %s", Rs.image, Rn.image, Rt.image)
+    action = {
+    }
+
+op STXRH(Rs:REG_INDEX, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stxrh %s, %s, [%s]", get32Reg(Rt), get32Reg(Rt), get64RegoSP(Rn))
+    image = format("0 1 0 0 1 0 0 0 0 0 0 %s 0 1 1 1 1 1 %s %s", Rs.image, Rn.image, Rt.image)
+    action = {
+    }
+
+op STXR(sf:u1, Rs:REG_INDEX, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stxr %s, %s, [%s]", get32o64Reg(sf, Rs), get32o64Reg(sf, Rt), get64RegoSP(Rn))
+    image = format("1 %1b 0 0 1 0 0 0 0 0 0 %s 0 1 1 1 1 1 %s %s", sf, Rs.image, Rn.image, Rt.image)
+    action = {
+    }
+
+op STZ2G_postindex( imm9:s9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stz2g %s, [%s], #%d", get64RegoSP(Rt), get64RegoSP(Rn), imm9)
+    image = format("1 1 0 1 1 0 0 1 1 1 1 %9b 0 1 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op STZ2G_preindex( imm9:s9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stz2g %s, [%s, #%d]!", get64RegoSP(Rt), get64RegoSP(Rn), imm9)
+    image = format("1 1 0 1 1 0 0 1 1 1 1 %9b 1 1 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op STZ2G_signedoffset(imm9:s9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stz2g %s, [%s, #%d]", get64RegoSP(Rt), get64RegoSP(Rn), imm9)
+    image = format("1 1 0 1 1 0 0 1 1 1 1 %9b 1 0 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op STZG_postindex( imm9:s9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stzg %s, [%s], #%d", get64RegoSP(Rt), get64RegoSP(Rn), imm9)
+    image = format("1 1 0 1 1 0 0 1 0 1 1 %9b 0 1 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op STZG_preindex( imm9:s9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stzg %s, [%s, #%d]!", get64RegoSP(Rt), get64RegoSP(Rn), imm9)
+    image = format("1 1 0 1 1 0 0 1 0 1 1 %9b 1 1 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op STZG_signedoffset(imm9:s9, Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stzg %s, [%s, #%d]", get64RegoSP(Rt), get64RegoSP(Rn), imm9)
+    image = format("1 1 0 1 1 0 0 1 0 1 1 %9b 1 0 %s %s", imm9, Rn.image, Rt.image)
+    action = {
+    }
+
+op STZGM(Rt:REG_INDEX, Rn:REG_INDEX)
+    syntax = format("stzgm %s, [%s]", get64Reg(Rt), get64RegoSP(Rn))
+    image = format("1 1 0 1 1 0 0 1 0 0 1 0 0 0 0 0 0 0 0 0 0 0 %s%s", Rn.image, Rt.image)
+    action = {
+    }
+
+op SWPB(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("swp%sb %s, %s, [%s]", getAcquireLoadVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    image = format("0 0 1 1 1 0 0 0 %1b %1b 1 %s 1 0 0 0 0 0 %s%s", A,R,Rs.image, Rn.image, Rt.image)
+    action = {
+    }
+
+op SWPH(A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("swp%sh %s, %s, [%s]", getAcquireLoadVariante(A,R), get32Reg(Rs), get32Reg(Rt), get64RegoSP(Rn))
+    image = format("0 1 1 1 1 0 0 0 %1b %1b 1 %s 1 0 0 0 0 0 %s%s", A,R,Rs.image, Rn.image, Rt.image)
+    action = {
+    }
+
+op SWP(sf:u1, A:u1, R:u1, Rs:REG_INDEX, Rn:REG_INDEX, Rt:REG_INDEX)
+    syntax = format("swp%s %s, %s, [%s]", getAcquireLoadVariante(A,R), get32o64Reg(sf, Rs), get32o64Reg(sf, Rt), get64RegoSP(Rn))
+    image = format("1 %1b 1 1 1 0 0 0 %1b %1b 1 %s 1 0 0 0 0 0 %s%s", sf, A,R,Rs.image, Rn.image, Rt.image)
+    action = {
+    }
 
 
 

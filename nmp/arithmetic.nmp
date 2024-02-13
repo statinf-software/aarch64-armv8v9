@@ -2,9 +2,10 @@
 op arithmetic = ADC | ADCS |
   ADD_extended | ADD_immediate | ADD_shifted | ADDG | ADDS_extended | ADDS_immediate | ADDS_shifted |
   ADR | ADRP | ASRV | SBFM | CFINV | CLS | CLZ |
-  CRC32B | CRC32CB | CSEL | CSINC | CSINV | CSNEG |
+  CRC32 | CRC32C | CSEL | CSINC | CSINV | CSNEG |
   LSLV | LSRV | MADD | MOVK | MOVN | MOVZ | MSUB |
-  RBIT | REV | REV16 | RMIF | RORV
+  RBIT | REV | REV16 | RMIF | RORV | SDIV | SMADDL | SMSUBL | SMULH |
+  SUB_reg | SUB_imm | SUB_shifted | SUBG | SUBP | SUBPS | SUBS_imm | SUBS_reg | SUBS_shifted
 
 op ADC(sf:u1, rm:REG_INDEX, rn:REG_INDEX, rd:REG_INDEX)
     syntax = format("adc %s, %s, %s", get32o64Reg(sf, rd), get32o64Reg(sf, rn), get32o64Reg(sf, rm))
@@ -205,7 +206,6 @@ op ASRV(sf:u1, Rm:REG_INDEX, Rn:REG_INDEX, Rd:REG_INDEX)
         // X[d, datasize] = result;
     }
 
-//idem ASR_immediate
 op SBFM(sf:u1,N:u1,immr:u6,imms:u6,Rn:REG_INDEX, Rd:REG_INDEX)
     syntax = format("sbfm %s, %s, #%d, #%d", get32o64Reg(sf && N, Rd), get32o64Reg(sf && N, Rn), immr, imms)
     image = format("%1b00100110%1b%6b%6b%s%s", sf, N, immr, imms, Rn.image, Rd.image)
@@ -265,44 +265,22 @@ op CLZ(sf: u1, Rn:REG_INDEX, Rd:REG_INDEX)
         // X[d, datasize] = result<datasize-1:0>;
     }
 
-macro getCRC32BVariant(sf, sz) = \
-    if sf == 0 && sz == 0 then \
-        "crc32b" \
-    else if sf == 0 && sz == 1 then \
-        "crc32h" \
-    else if sf == 0 && sz == 2 then \
-        "crc32w" \
-    else if sf == 1 && sz == 3 then \
-        "crc32x" \
-    else "undefined crc32" \
-    endif \
-    endif \
-    endif \
-    endif 
+macro getCRC32Variant(sf, sz) = \
+    if sf == 0 && sz == 0 then "b" \
+    else if sf == 0 && sz == 1 then "h" \
+    else if sf == 0 && sz == 2 then "w" \
+    else if sf == 1 && sz == 3 then "x" \
+    else "??" \
+    endif endif endif endif 
 
-op CRC32B(sf:u1, Rm:REG_INDEX, sz:u2, Rn:REG_INDEX, Rd:REG_INDEX)
-    syntax = format("%s %s, %s, %s", getCRC32BVariant(sf, sz), get32Reg(Rd), get32Reg(Rn), get32o64Reg(sf==1 && sz==3, Rm))
+op CRC32(sf:u1, Rm:REG_INDEX, sz:u2, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("crc32%s %s, %s, %s", getCRC32Variant(sf, sz), get32Reg(Rd), get32Reg(Rn), get32o64Reg(sf==1 && sz==3, Rm))
     image = format("%1b 0 0 1 1 0 1 0 1 1 0 %s 0 1 0 0 %2b %s %s", sf, Rm.image, sz, Rn.image, Rd.image)
     action = {
     }
 
-macro getCRC32CBVariant(sf, sz) = \
-    if sf == 0 && sz == 0 then \
-        "crc32cb" \
-    else if sf == 0 && sz == 1 then \
-        "crc32ch" \
-    else if sf == 0 && sz == 2 then \
-        "crc32cw" \
-    else if sf == 1 && sz == 3 then \
-        "crc32cx" \
-    else "undefined crc32" \
-    endif \
-    endif \
-    endif \
-    endif 
-
-op CRC32CB(sf:u1, Rm:REG_INDEX, sz:u2, Rn:REG_INDEX, Rd:REG_INDEX)
-    syntax = format("%s %s, %s, %s", getCRC32CBVariant(sf, sz), get32Reg(Rd), get32Reg(Rn), get32o64Reg(sf==1 && sz==3, Rm))
+op CRC32C(sf:u1, Rm:REG_INDEX, sz:u2, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("crc32c%s %s, %s, %s", getCRC32Variant(sf, sz), get32Reg(Rd), get32Reg(Rn), get32o64Reg(sf==1 && sz==3, Rm))
     image = format("%1b 0 0 1 1 0 1 0 1 1 0 %s 0 1 0 1 %2b %s %s", sf, Rm.image, sz, Rn.image, Rd.image)
     action = {
     }
@@ -409,19 +387,84 @@ op RORV(sf:u1, Rm:REG_INDEX, Rn:REG_INDEX, Rd:REG_INDEX)
     action = {
     }
 
+op SDIV(sf:u1, Rm:REG_INDEX, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("sdiv %s, %s, %s", get32o64Reg(sf, Rd), get32o64Reg(sf, Rn), get32o64Reg(sf, Rm))
+    image = format("%1b 0 0 1 1 0 1 0 1 1 0 %s 0 0 0 0 1 1 %s %s", sf, Rm, Rn, Rd)
+    action = {
+    }
+
+op SMADDL(Rm:REG_INDEX, Ra:REG_INDEX,Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("smaddl %s, %s, %s, %s", get64Reg(Rd), get64Reg(Rn), get64Reg(Rm), get64Reg(Ra))
+    image = format("1 0 0 1 1 0 1 1 0 0 1 %s 0 %s%s%s", Rm.image, Ra.image, Rn.image, Rd.image)
+    action = {
+    }
+
+op SMSUBL(Rm:REG_INDEX, Ra:REG_INDEX,Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("smsubl %s, %s, %s, %s", get64Reg(Rd), get64Reg(Rn), get64Reg(Rm), get64Reg(Ra))
+    image = format("1 0 0 1 1 0 1 1 0 0 1 %s 1 %s%s%s", Rm.image, Ra.image, Rn.image, Rd.image)
+    action = {
+    }
+
+op SMULH(Rm:REG_INDEX, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("smulh %s, %s, %s", get64Reg(Rd), get64Reg(Rn), get64Reg(Rm))
+    image = format("1 0 0 1 1 0 1 1 0 1 0 %s 0 1 1 1 1 1 %s%s", Rm.image, Rn.image, Rd.image)
+    action = {
+    }
+
+op SUB_reg(sf:u1, Rm:REG_INDEX, option:u3, imm3:u3, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("sub %s, %s, %s%s", get32o64RegoSP(sf, Rd), get32o64RegoSP(sf, Rn), get32o64Reg((option & 3) == 3, Rm), extend(option, imm3))
+    image = format("%1b 1 0 0 1 0 1 1 0 0 1 %s %3b %3b %s%s", sf, Rm.image, option, imm3, Rn.image, Rd.image)
+    action = {
+    }
+
+op SUB_imm(sf:u1, sh:u1, imm12:u12, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("sub %s, %s, #%d%s", get32o64RegoSP(sf, Rd), get32o64RegoSP(sf, Rn), imm12, shiftlbl(sh))
+    image = format("%1b 1 0 1 0 0 0 1 0 %1b %12b %s%s", sf, sh, imm12, Rn.image, Rd.image)
+    action = {
+    }
+
+op SUB_shifted(sf:u1, sh:u2, rm:REG_INDEX, imm6: s6, rn:REG_INDEX, rd:REG_INDEX)
+   syntax = format("sub %s, %s, %s%s", get32o64Reg(sf, rd), get32o64Reg(sf, rn), get32o64Reg(sf, rm), shiftlblV(sh,imm6))
+    image = format("%1b 1 0 0 1 0 1 1 %2b 0 %s%6b%s%s", sf, sh, rn.image, imm6, rm.image, rd.image)
+    action = {
+    }
+
+op SUBG(uimm6: u6, uimm4: u4, Xn: REG_INDEX, Xd: REG_INDEX)
+    syntax = format("subg %s, %s, #%d, #%d", get64RegoSP(Xd), get64RegoSP(Xn), uimm6, uimm4)
+    image = format("1 1 0 1 0 0 0 1 1 0 %6b 0 0 %4b %s %s", uimm6, uimm4, Xn.image, Xd.image)
+    action = {
+    }
+
+op SUBP(Rm:REG_INDEX, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("subp %s, %s, %s", get64Reg(Rd), get64Reg(Rn), get64Reg(Rm))
+    image = format("1 0 0 1 1 0 1 0 1 1 0 %s 0 0 0 0 0 0 %s%s", Rm.image, Rn.image, Rd.image)
+    action = {
+    }
+
+op SUBPS(Rm:REG_INDEX, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("subps %s, %s, %s", get64Reg(Rd), get64Reg(Rn), get64Reg(Rm))
+    image = format("1 0 1 1 1 0 1 0 1 1 0 %s 0 0 0 0 0 0 %s%s", Rm.image, Rn.image, Rd.image)
+    action = {
+    }
 
 
+op SUBS_reg(sf:u1, Rm:REG_INDEX, option:u3, imm3:u3, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("subs %s, %s, %s%s", get32o64RegoSP(sf, Rd), get32o64RegoSP(sf, Rn), get32o64Reg((option & 3) == 3, Rm), extend(option, imm3))
+    image = format("%1b 1 1 0 1 0 1 1 0 0 1 %s %3b %3b %s%s", sf, Rm.image, option, imm3, Rn.image, Rd.image)
+    action = {
+    }
 
+op SUBS_imm(sf:u1, sh:u1, imm12:u12, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("sub %s, %s, #%d%s", get32o64RegoSP(sf, Rd), get32o64RegoSP(sf, Rn), imm12, shiftlbl(sh))
+    image = format("%1b 1 1 1 0 0 0 1 0 %1b %12b %s%s", sf, sh, imm12, Rn.image, Rd.image)
+    action = {
+    }
 
-
-
-
-
-
-
-
-
-
+op SUBS_shifted(sf:u1, sh:u2, rm:REG_INDEX, imm6: s6, rn:REG_INDEX, rd:REG_INDEX)
+   syntax = format("sub %s, %s, %s%s", get32o64Reg(sf, rd), get32o64Reg(sf, rn), get32o64Reg(sf, rm), shiftlblV(sh,imm6))
+    image = format("%1b 1 1 0 1 0 1 1 %2b 0 %s%6b%s%s", sf, sh, rn.image, imm6, rm.image, rd.image)
+    action = {
+    }
 
 
 

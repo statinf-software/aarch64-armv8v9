@@ -1,12 +1,9 @@
 // branches
 macro BranchTo(addr) = NPC = (addr)
 
-//| BRB
 op branch = B | B_Cond | BC_Cond | BL | BLR | BLRAA | BLRAAZ | BLRAB | BLRABZ | 
 			BR | BRAA | BRAAZ | BRAB | BRABZ | 
 			CBZ | CBNZ | ERET | ERETAA | ERETAB | RET | RETA
-
-//CBNZ CBZ TBNZ TBZ RET
 
 op B(signed_immed_26: IMM26)
 	target = __IADDR + 8 + coerce(int(64), signed_immed_26)

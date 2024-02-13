@@ -1,21 +1,23 @@
-op system = SYS | AUTDA | AUTDB | AUTIA | AUTIAVariante | AUTIB | AUTIBVariante | BFM | BIC | BICS |
+op system = SYS | SYSL | AUTDA | AUTDB | AUTIA | AUTIAVariante | AUTIB | AUTIBVariante | 
+    PACDA | PACDB | PACGA | PACIA | PACIAVariante | PACIB | PACIBVariante |
+    BFM | BIC | BICS |
     BRK | BTI | CLREX | DCPS1 | DCPS2 | DCPS3 | DRPS | ESB | GMI | HLT | HVC |
-    MRS | MSR_register
-
-// Aliases
-// ATCRn == '0111' && CRm == '100x' && SysOp(op1,'0111',CRm,op2) == Sys_AT
-// BRBop1 == '001' && CRn == '0111' && CRm == '0010' && SysOp('001','0111','0010',op2) == Sys_BRB
-// CFPop1 == '011' && CRn == '0111' && CRm == '0011' && op2 == '100'
-// CPPop1 == '011' && CRn == '0111' && CRm == '0011' && op2 == '111'
-// DCCRn == '0111' && SysOp(op1,'0111',CRm,op2) == Sys_DC
-// DVPop1 == '011' && CRn == '0111' && CRm == '0011' && op2 == '101'
-// ICCRn == '0111' && SysOp(op1,'0111',CRm,op2) == Sys_IC
-// TLBICRn == '100x' && SysOp(op1,CRn,CRm,op2) == Sys_TLBI
+    MRS | MSR_register | SETF | SEV | SEVL | SMC | SVC
 
 op SYS(op1:u3, CRn:u4, CRm: u4, op2:u3, Rt:REG_INDEX)
-    //AT <at_op>, <Xt> === SYS #<op1>, C7, <Cm>, #<op2>, <Xt>
-    syntax = "sys"
+    syntax = format("sys #%d, %d, %d, #%d, %s", op1, CRn, CRm, op2, get64Reg(Rt))
     image = format("1101010100001%3b%4b%4b%3b%s", op1, CRn, CRm, op2, Rt.image)
+    action = {
+        // integer sys_op1 = UInt(op1);
+        // integer sys_op2 = UInt(op2);
+        // integer sys_crn = UInt(CRn);
+        // integer sys_crm = UInt(CRm);
+        // AArch64.SysInstr(1, sys_op1, sys_crn, sys_crm, sys_op2, t);
+    }
+
+op SYSL(op1:u3, CRn:u4, CRm: u4, op2:u3, Rt:REG_INDEX)
+    syntax = format("sysl %s, #%d, %d, %d, #%d", get64Reg(Rt), op1, CRn, CRm, op2)
+    image = format("1 1 0 1 0 1 0 1 0 0 1 0 1%3b%4b%4b%3b%s", op1, CRn, CRm, op2, Rt.image)
     action = {
         // integer sys_op1 = UInt(op1);
         // integer sys_op2 = UInt(op2);
@@ -84,23 +86,15 @@ op AUTIA(Z:u1, Rn:REG_INDEX, Rd:REG_INDEX)
         // X[d, 64] = AuthIA(X[d, 64], X[n, 64], FALSE);
     }
 
-macro getAUTIAVariante(CRm, op2) = \
-    if CRm == 0 && op2 == 0 then \
-        "AUTIA1716" \
-    else  \
-        if CRm == 1 && op2 == 1 then \
-            "AUTIASP" \
-        else  \
-            if CRm == 1 && op2 == 0 then \
-                "AUTIAZ" \
-            else \
-                "undefined autia??" \
-            endif \
-        endif \
-    endif
+macro getAuthVariante(CRm, op2) = \
+    if CRm == 0 && op2 == 0 then "1716" \
+    else if CRm == 1 && op2 == 1 then "sp" \
+    else if CRm == 1 && op2 == 0 then "z" \
+    else "??" \
+    endif endif endif
 
 op AUTIAVariante(CRm: u1, op2: u1) 
-    syntax = format("%s", getAUTIAVariante(CRm, op2))
+    syntax = format("autia%s", getAuthVariante(CRm, op2))
     image = format("1101010100000011001000%1b110%1b11111", CRm, op2)
     action = {
         // integer d;
@@ -150,20 +144,8 @@ op AUTIB(Z:u1, Rn:REG_INDEX, Rd:REG_INDEX)
         // X[d, 64] = AuthIB(X[d, 64], X[n, 64], FALSE);
     }
 
-macro getAUTIBVariante(CRm, op2) = \
-    if CRm == 0 && op2 == 0 then \
-        "AUTIB1716" \
-    else if CRm == 1 && op2 == 1 then \
-        "AUTIBSP" \
-    else if CRm == 1 && op2 == 0 then \
-        "AUTIBZ" \
-    else "undefined autib??" \
-    endif \
-    endif \
-    endif
-
 op AUTIBVariante(CRm: u1, op2: u1) 
-    syntax = format("%s", getAUTIBVariante(CRm, op2))
+    syntax = format("autib%s", getAuthVariante(CRm, op2))
     image = format("1101010100000011001000%1b111%1b11111", CRm, op2)
     action = {
         // integer d;
@@ -192,6 +174,62 @@ op AUTIBVariante(CRm: u1, op2: u1)
         // otherwise SEE "HINT";
         // //then idem AUTIB
     }
+
+op PACDA(Z:u1, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = if Z == 1 && Rn == 31 then 
+                format("pacdza %s", get64Reg(Rd)) 
+            else 
+                format("pacda %s, %s", get64Reg(Rd), get64RegoSP(Rn)) 
+            endif
+    image = format("1 1 0 1 1 0 1 0 1 1 0 0 0 0 0 1 0 0 %1b 0 1 0 %s%s", Z, Rn, Rd)
+    action = {
+    }
+
+op PACDB(Z:u1, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = if Z == 1 && Rn == 31 then 
+                format("pacdzb %s", get64Reg(Rd)) 
+            else 
+                format("pacdb %s, %s", get64Reg(Rd), get64RegoSP(Rn)) 
+            endif
+    image = format("1 1 0 1 1 0 1 0 1 1 0 0 0 0 0 1 0 0 %1b 0 1 1 %s%s", Z, Rn, Rd)
+    action = {
+    }
+
+op PACGA(Rm:REG_INDEX, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = format("pacga %s, %s, %s", get64Reg(Rd), get64Reg(Rn), get64RegoSP(Rm))
+    image = format("1 0 0 1 1 0 1 0 1 1 0 %s 0 0 1 1 0 0 %s%s", Rm.image, Rn.image, Rd.image)
+    action = {
+    }
+
+op PACIA(Z:u1, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = if Z == 1 && Rn == 31 then 
+                format("paciza %s", get64Reg(Rd)) 
+            else 
+                format("pacia %s, %s", get64Reg(Rd), get64RegoSP(Rn)) 
+            endif
+    image = format("1 1 0 1 1 0 1 0 1 1 0 0 0 0 0 1 0 0 %1b 0 0 0 %s%s", Z, Rn, Rd)
+    action = {
+    }
+
+op PACIAVariante(CRm:u1, op2:u1)
+    syntax = format("pacia%s", getAuthVariante(CRm, op2))
+    image = format("1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 0 0 0 %1b 1 0 0 %1b 1 1 1 1 1", CRm, op2)
+    action = {}
+
+op PACIB(Z:u1, Rn:REG_INDEX, Rd:REG_INDEX)
+    syntax = if Z == 1 && Rn == 31 then 
+                format("pacizb %s", get64Reg(Rd)) 
+            else 
+                format("pacib %s, %s", get64Reg(Rd), get64RegoSP(Rn)) 
+            endif
+    image = format("1 1 0 1 1 0 1 0 1 1 0 0 0 0 0 1 0 0 %1b 0 0 1 %s%s", Z, Rn, Rd)
+    action = {
+    }
+
+op PACIBVariante(CRm:u1, op2:u1)
+    syntax = format("pacib%s", getAuthVariante(CRm, op2))
+    image = format("1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 0 0 0 %1b 1 0 1 %1b 1 1 1 1 1", CRm, op2)
+    action = {}
 
 op BFM(sf:u1, N: u1, immr:u6, imms: u6, Rn: REG_INDEX, Rd: REG_INDEX)
     syntax = format("bfm %s, %s, #%d, #%d", get32o64Reg(sf, Rd), get32o64Reg(sf, Rn), immr, imms)
@@ -263,9 +301,9 @@ op BRK(imm16: u16)
         //AArch64.SoftwareBreakpoint(imm16);
     }
 
-op BTI(op2:u2)
+op BTI(op2:u3)
     syntax = format("bti %d", op2)
-    image = format("1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 0 0 1 0 0 %2b 0 1 1 1 1 1", op2)
+    image = format("1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 0 0 1 0 0 %3b 1 1 1 1 1", op2)
     action = {
         // SystemHintOp op;
         // if CRm:op2 == '0100 xx0' then
@@ -433,13 +471,35 @@ op NOP()
     }
 
 
+op SETF(sf:u1, Rn:REG_INDEX)
+    syntax = format("%s %s", if sf == 0 then "setf8" else "setf16" endif, get32Reg(Rn))
+    image = format("0 0 1 1 1 0 1 0 0 0 0 0 0 0 0 0 0 %1b 0 0 1 0 %s 0 1 1 0 1", sf, Rn.image)
+    action = {
+    }
 
+op SEV()
+    syntax = "sev"
+    image = "1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 0 0 0 0 0 1 0 0 1 1 1 1 1"
+    action = {
+    }
 
+op SEVL()
+    syntax = "sev"
+    image = "1 1 0 1 0 1 0 1 0 0 0 0 0 0 1 1 0 0 1 0 0 0 0 0 1 0 1 1 1 1 1 1"
+    action = {
+    }
 
+op SMC(imm16:u16)
+    syntax = format("smc #%d", imm16)
+    image = format("1 1 0 1 0 1 0 0 0 0 0 %16b 0 0 0 1 1", imm16)
+    action = {
+    }
 
-
-
-
+op SVC(imm16:u16)
+    syntax = format("svc #%d", imm16)
+    image = format("1 1 0 1 0 1 0 0 0 0 0 %16b 0 0 0 0 1", imm16)
+    action = {
+    }
 
 
 
