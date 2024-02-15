@@ -341,7 +341,7 @@ op MOVN(sf:u1, hw:u2, imm16:u16, Rd:REG_INDEX)
     }
 
 op MOVZ(sf:u1, hw:u2, imm16:u16, Rd:REG_INDEX)
-    syntax = format("movz%s, #%d, LSL #%d", get32o64Reg(sf, Rd), imm16, hw)
+    syntax = format("movz %s, #%d%s", get32o64Reg(sf, Rd), imm16, if hw != 0 then format(", LSL #%d", hw) else "" endif)
     image = format("%1b 1 0 1 0 0 1 0 1 %2b %16b %s", sf,  hw, imm16, Rd.image)
     action = {
     }
