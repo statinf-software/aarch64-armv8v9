@@ -1,6 +1,6 @@
 op system = SYS | SYSL | AUTDA | AUTDB | AUTIA | AUTIAVariante | AUTIB | AUTIBVariante | 
     PACDA | PACDB | PACGA | PACIA | PACIAVariante | PACIB | PACIBVariante |
-    BFM | BIC | BICS |
+    BFM | BIC | BICS | NOP |
     BRK | BTI | CLREX | DCPS1 | DCPS2 | DCPS3 | DRPS | ESB | GMI | HLT | HVC |
     MRS | MSR_register | SETF | SEV | SEVL | SMC | SVC | UDF | WFE | WFET | XPAC | XPACLRI |
     YIELD
