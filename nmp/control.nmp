@@ -6,63 +6,63 @@ op branch = B | B_Cond | BC_Cond | BL | BLR | BLRAA | BLRAAZ | BLRAB | BLRABZ |
 			CBZ | CBNZ | ERET | ERETAA | ERETAB | RET | RETA |
 			TBNZ | TBZ | TCANCEL | TCOMMIT | TSTART
 
-op B(signed_immed_26: IMM26)
-	target = __IADDR + 8 + coerce(int(64), signed_immed_26)
+op B(imm26: s26)
+	target = __IADDR + imm26*4
 	syntax = format("b %@", target)
-	image = format("000101%s", signed_immed_26.image)
+	image = format("000101%26b", imm26)
 	action = {
-		imm64 = SignExtend(signed_immed_26 :: 0b0, 64);
-		targetAddress = Align(PC, 4) + imm64;
-		BranchTo(targetAddress);
+		// imm64 = SignExtend(signed_immed_26 :: 0b0, 64);
+		// targetAddress = Align(PC, 4) + imm64;
+		// BranchTo(targetAddress);
 	}
 
-op B_Cond(cond: full_condition, signed_immed_19: IMM19)
-	target = __IADDR + 8 + coerce(int(64), signed_immed_19)
+op B_Cond(cond: full_condition, imm19: s19)
+	target = __IADDR + imm19*4
 	syntax = format("b.%s %@", cond.syntax, target)
-	image = format("01010100%s0%s", signed_immed_19.image, cond.image)
+	image = format("01010100%19b0%s", imm19, cond.image)
 	action = {
-		ConditionHolds(cond.value);
-		if result then
-			imm64 = SignExtend(signed_immed_19 :: 0b0, 64);
-			targetAddress = Align(PC, 4) + imm64;
-			BranchTo(targetAddress);
-		endif;
+		// ConditionHolds(cond.value);
+		// if result then
+		// 	imm64 = SignExtend(signed_immed_19 :: 0b0, 64);
+		// 	targetAddress = Align(PC, 4) + imm64;
+		// 	BranchTo(targetAddress);
+		// endif;
 	}
 
-op BC_Cond(cond: full_condition, signed_immed_19: IMM19)
-	target = __IADDR + 8 + coerce(int(64), signed_immed_19)
+op BC_Cond(cond: full_condition, imm19: s19)
+	target = __IADDR + imm19*4
 	syntax = format("bc.%s %@", cond.syntax, target)
-	image = format("01010100%s1%s", signed_immed_19.image, cond.image)
+	image = format("01010100%19b1%s", imm19, cond.image)
 	action = {
-		ConditionHolds(cond.value);
-		if result then
-			imm64 = SignExtend(signed_immed_19 :: 0b0, 64);
-			targetAddress = Align(PC, 4) + imm64;
-			BranchTo(targetAddress);
-		endif;
+		// ConditionHolds(cond.value);
+		// if result then
+		// 	imm64 = SignExtend(signed_immed_19 :: 0b0, 64);
+		// 	targetAddress = Align(PC, 4) + imm64;
+		// 	BranchTo(targetAddress);
+		// endif;
 	}
 
-op BL(signed_immed_26: IMM26)
-	target = __IADDR + 8 + coerce(int(64), signed_immed_26)
+op BL(imm26: s26)
+	target = __IADDR + imm26*4
 	syntax = format("bl %@", target)
-	image = format("100101%s", signed_immed_26.image)
+	image = format("100101%26b", imm26)
 	action = {
-		imm64 = SignExtend(signed_immed_26 :: 0b0, 64);
-		targetAddress = Align(PC, 4) + imm64;
-		X[30] = Align(PC, 4);//write pc+4 into X[30]
-		BranchTo(targetAddress);
+		// imm64 = SignExtend(signed_immed_26 :: 0b0, 64);
+		// targetAddress = Align(PC, 4) + imm64;
+		// X[30] = Align(PC, 4);//write pc+4 into X[30]
+		// BranchTo(targetAddress);
 	}
 
 op BLR(rn: REG_INDEX)
 	syntax = format("blr %s", get64RegoSP(rn))
 	image = format("1101011000111111000000%s00000", rn.image)
 	action = {
-		imm64 = UInt64(X[rn]);
-		targetAddress = Align(PC, 4) + imm64;
-		X[30] = Align(PC, 4);//write pc+4 into X[30]
+		// imm64 = UInt64(X[rn]);
+		// targetAddress = Align(PC, 4) + imm64;
+		// X[30] = Align(PC, 4);//write pc+4 into X[30]
 		// Value in BTypeNext will be used to set PSTATE.BTYPE
 		// BTypeNext = '10';
-		BranchTo(targetAddress);
+		// BranchTo(targetAddress);
 	}
 
 op BLRAA(rn: REG_INDEX, rm: REG_INDEX)
@@ -90,7 +90,7 @@ op BLRABZ(rn: REG_INDEX, rm: REG_INDEX)
 	}
 
 op BR(rn: REG_INDEX)
-	syntax = format("br X%s", get64RegoSP(rn))
+	syntax = format("br %s", get64RegoSP(rn))
 	image = format("1101011000011111000000%s00000", rn.image)
 	action = {
 		targetAddress = UInt64(X[rn]);
@@ -130,6 +130,7 @@ op BRABZ(rn: REG_INDEX, rm: REG_INDEX)
 	}
 
 op CBNZ(sz:u1, imm19:u19, Rt:REG_INDEX)
+	target = __IADDR + imm19*4
     syntax = format("cbnz %s, %x", get32o64Reg(sz, Rt), imm19)
     image = format("%1b 0 1 1 0 1 0 1 %19b %s", sz, imm19, Rt.image)
     action = {
@@ -144,6 +145,7 @@ op CBNZ(sz:u1, imm19:u19, Rt:REG_INDEX)
     }
 
 op CBZ(sz:u1, imm19:u19, Rt:REG_INDEX)
+	target = __IADDR + imm19*4
     syntax = format("cbz %s, %x", get32o64Reg(sz, Rt), imm19)
     image = format("%1b 0 1 1 0 1 0 0 %19b %s", sz, imm19, Rt.image)
     action = {	
@@ -193,12 +195,14 @@ op RETA(M: u1)
     }
 
 op TBNZ(b5:u1, b40:u5, imm14:u14, Rt:REG_INDEX)
+	target = __IADDR + imm14*4
     syntax = format("tbnz %s, #%d, %d", get32o64Reg(b5, Rt), b5::b40, imm14)
     image = format("%1b 0 1 1 0 1 1 1 %5b %14b %s", b5, b40, imm14, Rt.image)
     action = {
     }
 
 op TBZ(b5:u1, b40:u5, imm14:u14, Rt:REG_INDEX)
+	target = __IADDR + imm14*4
     syntax = format("tbz %s, #%d, %d", get32o64Reg(b5, Rt), b5::b40, imm14)
     image = format("%1b 0 1 1 0 1 1 0 %5b %14b %s", b5, b40, imm14, Rt.image)
     action = {
